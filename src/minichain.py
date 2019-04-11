@@ -15,42 +15,64 @@ class minichain:
         self.index = -1
         self.recent_block_hash = ''
         self.prev_hash = '0'*64
-        #self.transaction = '000000000000'
-        self.merkleroot = '0000000000000000000000000000000000000000000000000000000000000000'
+        self.merkle_root = '0000000000000000000000000000000000000000000000000000000000000000'
         self.version = '00000001'
+        self.nonce = '00000000'
 
     def store_block(self,block,index):
         return block
     def insertBlock(self,block_header, block_hash):
         try:
             self.index = self.index + 1
-            version = block_header[0:8]
-            prev_hash = block_header[8:72]
-            merkle_root = block_header[72:136]
-            target = block_header[136:200]
-            nonce = block_header[200:208]
+            self.current_hash = block_hash
+            # construct block header
+            self.version = block_header[0:8]
+            self.prev_hash = block_header[8:72]
+            self.merkle_root = block_header[72:136]
+            self.target = block_header[136:200]
+            self.nonce = block_header[200:208]
             block = {
                     "block_header" : {
-                        "version" : version,
-                        "prev_hash" : prev_hash,
-                        "merkle_root" : merkle_root,
-                        "target" : target,
-                        "nonce" : nonce,
+                        "version" : self.version,
+                        "prev_hash" : self.prev_hash,
+                        "merkle_root" : self.merkle_root,
+                        "target" : self.target,
+                        "nonce" : self.nonce,
                         },
-                    "block_hash" : block_hash
+                    "block_hash" : self.current_hash
                     }
             with open(self.DIR+'/'+str(self.index)+'.json', 'w+') as f:
                 f.write(json.dumps(block))
                 f.flush()
-                f.close()
+            f.close()
         except:
             return False
         return True
+    def updateBlock(self,block,idx):
+        self.version = block['block_header']['version']
+        self.prev_hash = block['block_header']['prev_hash']
+        self.target = block['block_header']['target'] 
+        self.merkle_root = block['block_header']['merkle_root']
+        self.current_hash = block['block_hash']
+        self.index = idx
+    def getBlockHashByIndex(self,index):
+        with open(self.DIR + '/' + str(index) + '.json', 'r') as f:
+            block = json.load(f)
+            block_hash = block['block_hash']
+        return block_hash
     def getBlockByIndex(self,index):
         return str(index)
     def getIndex(self):
         return self.index
-    def getBlockByHash(self,current_hash):
+    def getBlockByHash(self,block_hash):
+        idx = 0
+        while True:
+            search_hash = self.getBlockHashByIndex(idx)
+            if block_hash == search_hash:
+                block = self.getBlcokByIndex(idx)
+                block_header = block['block_header']
+                return json.dumps(block_header)
+            idx = idx + 1
         return 'null'
     def getDifficult(self):
         return self.target
@@ -59,6 +81,6 @@ class minichain:
     def getVersion(self):
         return self.version
     def getMerkleRoot(self):
-        return self.merkleroot
+        return self.merkle_root
     def getTarget(self):
         return self.target
