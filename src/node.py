@@ -110,7 +110,6 @@ class node:
                     "hash_stop"  : hash_stop
                     }
                 }
-
         client.send(json.dumps(payload).encode('utf-8'))
         result = client.recv(4096)
         return result
@@ -121,14 +120,18 @@ class node:
             count = request['data']['hash_count']
             hash_begin = request['data']['hash_begin']
             hash_stop = request['data']['hash_stop']
-            retsult = []
-            #for i in range(0,count):
-                # read blocks and concat the blockhash
-            respond = {
-                    "error" : 0,
-                    "result" : result
-                    }
-            return json.dumps(respond)
+            result = self.minichain.getBlocks(count,hash_begin, hash_stop)
+            if result == None:
+                respond = {
+                        "error": 1                        
+                        }
+                return json.dumps(respond)
+            else:
+                respond = {
+                        "error" : 0,
+                        "result" : result
+                        }            
+                return json.dumps(respond)
         elif method == "sendHeader":            
             with self.mutex:
                 self.newBlock = True
@@ -226,6 +229,8 @@ class node:
 
                     respond = self.process_rpc_request(request,)
                     client_socket.send(json.dumps(respond).encode('utf-8'))
+                    ret = client_socket.recv(2048)
+                    print(ret)
                 else:
                     break
             except:

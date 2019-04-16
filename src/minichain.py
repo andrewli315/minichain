@@ -41,7 +41,7 @@ class minichain:
             block = {
                     "block_header" : {
                         "version" : self.version,
-                        "prev_hash" : self.prev_hash,
+                        "prev_block" : self.prev_hash,
                         "merkle_root" : self.merkle_root,
                         "target" : self.target,
                                      "nonce" : self.nonce,
@@ -66,7 +66,7 @@ class minichain:
 
     def updateBlock(self,block,idx):
         self.version = block['block_header']['version']
-        self.prev_hash = block['block_header']['prev_hash']
+        self.prev_hash = block['block_header']['prev_block']
         self.target = block['block_header']['target'] 
         self.merkle_root = block['block_header']['merkle_root']
         self.current_hash = block['block_hash']
@@ -101,6 +101,17 @@ class minichain:
                 break
             idx = idx + 1
         return None
+    def getBlocks(count, hash_begin, hash_stop):
+        idx = self.getBlockIndex(hash_begin)
+        begin = idx + 1
+        stop = idx + count + 1
+        result = []
+        for i in range(begin, stop):
+            block = json.loads(self.getBlockByIndex(i))
+            block_header = block['block_header']['version'] + block['block_header']['prev_block']
+                            + block['block_header']['merkle_root'] + block['block_header']['target']
+                            + block['block_header']['nonce']
+
     def getBlockIndex(self, block_hash):
         idx = 0
         while True:
