@@ -19,7 +19,6 @@ class node:
         self.neighbors = neighbors
         self.minichain = minichain
         self.getHeaderFlag = False
-        self.newBlock = False
         self.index = -1
     def pauseMining(self,flag):
         self.getHeaderFlag = flag
@@ -51,14 +50,12 @@ class node:
             # mutex lock for minichain
             if self.checkHash(recent_hash):
                     # insertBlock
-                    # sendBlock
-                if not self.newBlock:
-                    with self.mutex:
-                        self.newBlock = False
-                        self.index = self.index + 1
-                        self.minichain.insertBlock(block_header, recent_hash,self.index)
-                        self.sendHeader(block_header, recent_hash, self.minichain.getIndex())
-                        prev_hash = recent_hash
+                    # sendBlock              
+                with self.mutex:
+                    self.index = self.index + 1
+                    self.minichain.insertBlock(block_header, recent_hash,self.index)
+                    self.sendHeader(block_header, recent_hash, self.minichain.getIndex())
+                    prev_hash = recent_hash
 
     def checkHash(self,recent_hash):
         diff = str(self.minichain.getTarget()).index('1')
@@ -131,7 +128,6 @@ class node:
                 return json.dumps(respond)
         elif method == "sendHeader":            
             print("[GET]")
-            self.newBlock = True
             self.pauseMining(True)
             block_index = request['data']['block_height']
             block_hash = request['data']['block_hash']
@@ -145,24 +141,27 @@ class node:
                     self.minichain.insertBlock(block_header,block_hash, self.index)              
             else:
                 if block_index > self.index:
+                    print("[CHEACK FOR FORK]")
                     self.check_fork(prev_hash, block_hash, block_index, addr)
+                    self.pauseMining(False)
                 else:
                     print("My chain is longer than him")
+                    self.pauseMining(False)
 
             self.pauseMining(False)
     
     # make sure the fork is the longest 
     def check_fork(self,prev_hash, recent_hash, block_height, addr):
-        print(addr)
+        print("[GET FORK]")
         p2p_port = self.getNeighbor(addr)
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect((str(addr), p2p_port))
-
-        print(p2p_port)
+        try:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.connect((str(addr), p2p_port))
+        except:
+            print("EXCEPT")
         idx = self.index
         hash_begin = self.minichain.getBlockHashByIndex(idx)
-        while True:
-            
+        while True:            
             ret = self.minichain.getBlocks((block_height - idx ), hash_begin ,recent_hash)
             respond = json.loads(ret)
             print(respond)
@@ -263,7 +262,6 @@ class node:
                 if len(data) > 0:
                     req = data.decode('utf-8')
                     request = json.loads(req)
-                    print(addr)
                     respond = self.process_p2p_request(request,addr)
                     client_socket.send(json.dumps(respond).encode('utf-8'))
                 else:
