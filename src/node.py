@@ -40,22 +40,21 @@ class node:
         target = self.minichain.getTarget()
         m = hashlib.sha256()
         while True:
-            with self.mutex:
-                if self.getHeaderFlag == True:
-                    prev_hash = self.minichain.getPrevHash()
-                    continue
-
-                rand_num = hex(random.randint(0,4294967295))[2:]
-                nonce = '0'*(8-len(rand_num)) + rand_num
+            if self.getHeaderFlag == True:
+                prev_hash = self.minichain.getPrevHash()
+                continue
+            rand_num = hex(random.randint(0,4294967295))[2:]
+            nonce = '0'*(8-len(rand_num)) + rand_num
     
-                block_header = version + prev_hash + merkle_root + target + nonce
-                m.update(block_header.encode('utf-8'))
-                recent_hash = m.hexdigest()
-                # mutex lock for minichain
-                if self.checkHash(recent_hash):
+            block_header = version + prev_hash + merkle_root + target + nonce
+            m.update(block_header.encode('utf-8'))
+            recent_hash = m.hexdigest()
+            # mutex lock for minichain
+            if self.checkHash(recent_hash):
                     # insertBlock
                     # sendBlock
-                    if not self.newBlock:
+                if not self.newBlock:
+                    with self.mutex:
                         self.newBlock = False
                         self.index = self.index + 1
                         self.minichain.insertBlock(block_header, recent_hash,self.index)
@@ -132,28 +131,34 @@ class node:
                         }            
                 return json.dumps(respond)
         elif method == "sendHeader":            
-            with self.mutex:
-                self.newBlock = True
-                self.pauseMining(True)
-                block_index = request['data']['block_height']
-                block_hash = request['data']['block_hash']
-                block_header = request['data']['block_header']
-                prev_hash = block_header[8:72]
-                current_hash = self.minichain.getBlockHash()    
-                if current_hash == prev_hash:
-                    # the blockchain is latest in previous block
+            print("[GET]")
+            self.newBlock = True
+            self.pauseMining(True)
+            block_index = request['data']['block_height']
+            block_hash = request['data']['block_hash']
+            block_header = request['data']['block_header']
+            prev_hash = block_header[8:72]
+            current_hash = self.minichain.getBlockHash()    
+            if current_hash == prev_hash:
+                # the blockchain is latest in previous block
+                with self.mutex:
                     self.index = self.index + 1
-                    self.minichain.insertBlock(block_header,block_hash, self.index)
+                    self.minichain.insertBlock(block_header,block_hash, self.index)              
+            else:
+                if block_index > self.index:
+                    self.check_fork(prev_hash, block_hash, block_index, addr)
                 else:
-                    if block_index > self.index:
-                        self.check_fork(prev_hash, block_hash, block_index, addr)                     
-                self.pauseMining(False)
+                    print("My chain is longer than him")
+
+            self.pauseMining(False)
     
     # make sure the fork is the longest 
     def check_fork(self,prev_hash, recent_hash, block_height, addr):
+        print(addr)
+        print(p2p_port)
         p2p_port = self.getNeighbor(addr)
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect((addr, p2p_port))
+        client.connect((str(addr), p2p_port))
 
         idx = self.index
         hash_begin = self.minichain.getBlockHashByIndex(idx)
@@ -173,7 +178,8 @@ class node:
                     m = hashlib.sha256()
                     m.update(block)
                     block_hash = m.hexdiget()
-                    self.minichain.insertBlock(block , block_hash,idx)  
+                    with self.mutex:
+                        self.minichain.insertBlock(block , block_hash,idx)  
                     idx = idx + 1
                 self.index = idx
                 break
