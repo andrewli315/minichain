@@ -39,8 +39,11 @@ class node:
         target = self.minichain.getTarget()
         m = hashlib.sha256()
         while True:
+            if self.getHeaderFlag:
+                prev_hash = self.minichain.getPrevHash()
+                print(prev_hash)
+                continue
                         
-            prev_hash = self.minichain.getPrevHash()          
             rand_num = hex(random.randint(0,4294967295))[2:]
             nonce = '0'*(8-len(rand_num)) + rand_num
     
@@ -55,7 +58,7 @@ class node:
                     self.index = self.index + 1
                     self.minichain.insertBlock(block_header, recent_hash,self.index)
                     self.sendHeader(block_header, recent_hash, self.minichain.getIndex())
-                    prev_hash = recent_hash
+                    prev_hash = recent_hash            
 
     def checkHash(self,recent_hash):
         diff = str(self.minichain.getTarget()).index('1')
@@ -104,9 +107,9 @@ class node:
                     }
                 }
         client.send(json.dumps(payload).encode('utf-8'))
-        result = client.recv(4096)
-        print(result)
+        result = client.recv(4096)        
         return result.decode('utf-8')
+
     def RespondTemplate(self, error, result):
         if result == None:
             respond={
@@ -119,15 +122,14 @@ class node:
                     "result" : result
                     }
             return json.dumps(respond)
+
     def process_p2p_request(self, request,addr):
         method = request['method']
         if method == "getBlocks":
-            print(method)
             count = request['data']['hash_count']
             hash_begin = request['data']['hash_begin']
             hash_stop = request['data']['hash_stop']
             result = self.minichain.getBlocks(count,hash_begin, hash_stop)
-            print("proces p2p req result" + result)
             if result == None:               
                 return self.RespondTemplate(1,None)
             else:                
@@ -144,7 +146,8 @@ class node:
                 # the blockchain is latest in previous block
                 with self.mutex:
                     self.index = self.index + 1
-                    self.minichain.insertBlock(block_header,block_hash, self.index)              
+                    self.minichain.insertBlock(block_header,block_hash, self.index)
+
             else:
                 if block_index > self.index:
                     print("[CHEACK FOR FORK]")
@@ -179,8 +182,11 @@ class node:
             respond = json.loads(ret)
             print(respond)
             if respond["error"] == 1:
+                if idx == 0:
+                    hash_begin = '0000000000000000000000000000000000000000000000000000000000000000'
+                    continue
                 idx = idx - 1
-                hash_begin = prev_hash                
+                hash_begin = self.minichain.getBlockHashByIndex(idx) 
             elif respond["error"] == 0:
                 if not idx == block_height-1:
                     print("sucess")
@@ -214,9 +220,7 @@ class node:
 
         elif method == "getBlockHeader":
             block_hash = request['data']['block_hash']
-            print(block_hash)
-            result = self.minichain.getBlockHeader(block_hash)
-            print(result)
+            result = self.minichain.getBlockHeader(block_hash)            
             if result is None:
                 return self.RespondTemplate(1,"null")
             else:     
@@ -263,10 +267,10 @@ class node:
             try:
                 data = client_socket.recv(4096)
                 if len(data) > 0:
-                    req = data.decode('utf-8')
+                    req = data.decode('utf-8')                    
                     request = json.loads(req)
-                    respond = self.process_p2p_request(request,addr)
-                    print('ret ' + respond)
+                    print(request)
+                    respond = self.process_p2p_request(request,addr)                    
                     client_socket.send(json.dumps(respond).encode('utf-8'))
                 else:
                     break
