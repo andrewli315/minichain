@@ -107,7 +107,18 @@ class node:
         result = client.recv(4096)
         print(result)
         return result.decode('utf-8')
-
+    def RespondTemplate(self, error, result):
+        if result == None:
+            respond={
+                    "error" : error
+                    }
+            return json.dumps(respond)
+        else:
+            respond = {
+                    "error" : error,
+                    "result" : result
+                    }
+            return json.dumps(respond)
     def process_p2p_request(self, request,addr):
         method = request['method']
         if method == "getHeaders":
@@ -116,18 +127,11 @@ class node:
             hash_begin = request['data']['hash_begin']
             hash_stop = request['data']['hash_stop']
             result = self.minichain.getBlocks(count,hash_begin, hash_stop)
-            if result == None:
-                respond = {
-                        "error": 1                        
-                        }
-                
-                return json.dumps(respond)
-            else:
-                respond = {
-                        "error" : 0,
-                        "result" : result
-                        }            
-                return json.dumps(respond)
+            print("proces p2p req result" + result)
+            if result == None:               
+                return self.RespondTemplate(1,None)
+            else:                
+                return self.RespondTemplate(0,result)
         elif method == "sendHeader":            
             print("[GET]")
             self.pauseMining(True)
@@ -146,12 +150,15 @@ class node:
                     print("[CHEACK FOR FORK]")
                     self.check_fork(prev_hash, block_hash, block_index, addr)
                     self.pauseMining(False)
+                    
                 else:
                     print("My chain is longer than him")
-                    self.pauseMining(False)
+                    self.pauseMining(False)                    
+                    return self.RespondTemplate(1,None)
 
-            self.pauseMining(False)
-    
+            self.pauseMining(False)      
+            return self.RespondTemplate(0,None)      
+        return self.RespondTemplate(2,None)
     # make sure the fork is the longest 
     def check_fork(self,prev_hash, recent_hash, block_height, addr):
         print("[GET FORK]")
@@ -203,29 +210,17 @@ class node:
         elif method == "getBlockHash":
             index = request['data']['block_height']
             result = self.minichain.getBlockHashByIndex(index)
-            respond = {
-                    "error" : 0,
-                    "result": result
-                    }
-            return json.dumps(respond)
+            return self.RespondTemplate(0,result)
+
         elif method == "getBlockHeader":
             block_hash = request['data']['block_hash']
             print(block_hash)
             result = self.minichain.getBlockHeader(block_hash)
             print(result)
             if result is None:
-                respond = {
-                        "error" : 1,
-                        "result" : "null"
-                        }
-                return json.dumps(respond)
-            else:
-                respond = {
-                    "error" : 0,
-                    "result":0
-                    }
-                respond['result'] = json.loads(result)
-                return json.dumps(respond)
+                return self.RespondTemplate(1,"null")
+            else:     
+                return self.RespondTemplate(0,json.loads(result))
 
     def handle_rpc_client(self,client_socket, addr):
         while True:
@@ -271,7 +266,7 @@ class node:
                     req = data.decode('utf-8')
                     request = json.loads(req)
                     respond = self.process_p2p_request(request,addr)
-                    print('ret' + respond)
+                    print('ret ' + respond)
                     client_socket.send(json.dumps(respond).encode('utf-8'))
                 else:
                     break
