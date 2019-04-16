@@ -111,7 +111,8 @@ class minichain:
         for i in range(begin, stop):
             block = json.loads(self.getBlockByIndex(i))
             block_header = block['block_header']['version'] + block['block_header']['prev_block'] + block['block_header']['merkle_root'] + block['block_header']['target'] + block['block_header']['nonce']
-
+            result.append(block_header)
+        return result
     def getBlockIndex(self, block_hash):
         idx = 0
         while True:

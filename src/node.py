@@ -162,7 +162,7 @@ class node:
         idx = self.index
         hash_begin = self.minichain.getBlockHashByIndex(idx)
         while True:            
-            ret = self.minichain.getBlocks((block_height - idx ), hash_begin ,recent_hash)
+            ret = self.getBlocks( block_height - idx , hash_begin, hash_stop, client)
             respond = json.loads(ret)
             print(respond)
             if respond["error"] == 1:
