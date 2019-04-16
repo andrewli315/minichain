@@ -104,8 +104,8 @@ class node:
                     }
                 }
         client.send(json.dumps(payload).encode('utf-8'))
-        result = client.recv(4096)
-        return result
+        result = client.recv(4096)        
+        return result.decode('utf-8')
 
     def process_p2p_request(self, request,addr):
         method = request['method']
@@ -119,6 +119,7 @@ class node:
                 respond = {
                         "error": 1                        
                         }
+                
                 return json.dumps(respond)
             else:
                 respond = {
@@ -161,26 +162,32 @@ class node:
             print("EXCEPT")
         idx = self.index
         hash_begin = self.minichain.getBlockHashByIndex(idx)
+        # update the latest block one by one.
+        # otherwise, find the common block hash with one another node to be hash_begin      
+        
         while True:            
-            ret = self.getBlocks( block_height - idx , hash_begin, hash_stop, client)
+            ret = self.getBlocks( block_height - idx , hash_begin, recent_hash , client)
+            print(ret)
             respond = json.loads(ret)
             print(respond)
             if respond["error"] == 1:
                 idx = idx - 1
-                hash_begin = self.minichain.getBlockHashByIndex(idx)
-                continue
+                hash_begin = prev_hash                
             elif respond["error"] == 0:
-                idx = idx + 1
-                for block in respond["data"]:
-                    #check the block
-                    m = hashlib.sha256()
-                    m.update(block)
-                    block_hash = m.hexdiget()
-                    with self.mutex:
-                        self.minichain.insertBlock(block , block_hash,idx)  
+                if not idx == block_height-1:
+                    print("sucess")
+                else:
                     idx = idx + 1
-                self.index = idx
-                break
+                    for block in respond["data"]:
+                        #check the block
+                        m = hashlib.sha256()
+                        m.update(block)
+                        block_hash = m.hexdiget()
+                        with self.mutex:
+                            self.minichain.insertBlock(block , block_hash,idx)  
+                        idx = idx + 1
+                    self.index = idx
+                    break
         return True
 
     def process_rpc_request(self,request):
@@ -263,6 +270,7 @@ class node:
                     req = data.decode('utf-8')
                     request = json.loads(req)
                     respond = self.process_p2p_request(request,addr)
+                    print(respond)
                     client_socket.send(json.dumps(respond).encode('utf-8'))
                 else:
                     break
