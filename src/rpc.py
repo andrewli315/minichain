@@ -11,9 +11,24 @@ def main():
     port = 4444
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((host,port))
-
+    """
     payload = {
-            "method" : "getBlockCount" 
+            "method" : "getBlockHash",
+            "data" :{
+                "block_height":10
+                }
+            }
+    """
+    """
+    payload = {
+            "method" : "getBlockCount"
+        }
+    """
+    payload = {
+            "method" : "getBlockHeader",
+            "data" : {
+                "block_hash":"00006663f035e4fdb3877bf0735b0e3a8fb519dba216e2813aa399eb7a2b93bc"
+                }
             }
     print(json.dumps(payload))
     client.send(json.dumps(payload).encode('utf-8'))
