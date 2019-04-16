@@ -271,7 +271,7 @@ class node:
                     req = data.decode('utf-8')
                     request = json.loads(req)
                     respond = self.process_p2p_request(request,addr)
-                    print(respond)
+                    print('ret' + respond)
                     client_socket.send(json.dumps(respond).encode('utf-8'))
                 else:
                     break
