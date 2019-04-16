@@ -139,13 +139,14 @@ class node:
                 block_hash = request['data']['block_hash']
                 block_header = request['data']['block_header']
                 prev_hash = block_header[8:72]
-                current_hash = self.minichain.getBlockhash()                            
+                current_hash = self.minichain.getBlockHash()    
                 if current_hash == prev_hash:
                     # the blockchain is latest in previous block
                     self.index = self.index + 1
                     self.minichain.insertBlock(block_header,block_hash, self.index)
                 else:
-                    check_fork(prev_hash, block_hash, block_index, addr)
+                    if block_index > self.index:
+                        self.check_fork(prev_hash, block_hash, block_index, addr)                     
                 self.pauseMining(False)
     
     # make sure the fork is the longest 
