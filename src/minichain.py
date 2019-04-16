@@ -29,6 +29,7 @@ class minichain:
         return True
     # for insert the latest block
     def insertBlock(self,block_header, block_hash, index):
+        print("insert")
         try:
             self.index = index
             self.current_hash = block_hash
@@ -48,13 +49,14 @@ class minichain:
                         },
                     "block_hash" : self.current_hash
                     }
-            if not self.valid_block(prev_hash):
-                return False
+            #if not self.valid_block(prev_hash):
+            
             with open(self.DIR+'/'+str(self.index)+'.json', 'w+') as f:
                 f.write(json.dumps(block))
                 f.flush()
             f.close()
         except:
+            print("Except")
             return False
         return True
     def valid_block(self, prev_hash):
@@ -108,9 +110,7 @@ class minichain:
         result = []
         for i in range(begin, stop):
             block = json.loads(self.getBlockByIndex(i))
-            block_header = block['block_header']['version'] + block['block_header']['prev_block']
-                            + block['block_header']['merkle_root'] + block['block_header']['target']
-                            + block['block_header']['nonce']
+            block_header = block['block_header']['version'] + block['block_header']['prev_block'] + block['block_header']['merkle_root'] + block['block_header']['target'] + block['block_header']['nonce']
 
     def getBlockIndex(self, block_hash):
         idx = 0

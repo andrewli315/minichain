@@ -42,8 +42,8 @@ class node:
         while True:
             if self.getHeaderFlag == True:
                 print(self.getHeaderFlag)
+                prev_hash = self.minichain.getPrevHash()
                 continue
-
             # uint32_t 4294967295 
 
             rand_num = hex(random.randint(0,4294967295))[2:]
