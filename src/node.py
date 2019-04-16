@@ -121,7 +121,7 @@ class node:
             return json.dumps(respond)
     def process_p2p_request(self, request,addr):
         method = request['method']
-        if method == "getHeaders":
+        if method == "getBlocks":
             print(method)
             count = request['data']['hash_count']
             hash_begin = request['data']['hash_begin']
@@ -230,7 +230,7 @@ class node:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)
 
-                    respond = self.process_rpc_request(request,)
+                    respond = self.process_rpc_request(request)
                     client_socket.send(json.dumps(respond).encode('utf-8'))
                     ret = client_socket.recv(2048)
                     print(ret)
