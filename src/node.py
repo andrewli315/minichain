@@ -104,7 +104,8 @@ class node:
                     }
                 }
         client.send(json.dumps(payload).encode('utf-8'))
-        result = client.recv(4096)        
+        result = client.recv(4096)
+        print(result)
         return result.decode('utf-8')
 
     def process_p2p_request(self, request,addr):
