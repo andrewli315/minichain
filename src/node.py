@@ -155,16 +155,16 @@ class node:
     # make sure the fork is the longest 
     def check_fork(self,prev_hash, recent_hash, block_height, addr):
         print(addr)
-        print(p2p_port)
         p2p_port = self.getNeighbor(addr)
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.connect((str(addr), p2p_port))
 
+        print(p2p_port)
         idx = self.index
         hash_begin = self.minichain.getBlockHashByIndex(idx)
         while True:
             
-            ret = self.getBlocks((block_height - idx ), hash_begin ,recent_hash)
+            ret = self.minichain.getBlocks((block_height - idx ), hash_begin ,recent_hash)
             respond = json.loads(ret)
             print(respond)
             if respond["error"] == 1:
@@ -264,6 +264,7 @@ class node:
                 if len(data) > 0:
                     req = data.decode('utf-8')
                     request = json.loads(req)
+                    print(addr)
                     respond = self.process_p2p_request(request,addr)
                     client_socket.send(json.dumps(respond).encode('utf-8'))
                 else:
@@ -282,7 +283,7 @@ class node:
             while True:
                 c, addr = s.accept()
                 try:
-                    threading.Thread(target=self.handle_p2p_client, args=(c, addr)).start()
+                    threading.Thread(target=self.handle_p2p_client, args=(c, addr[0])).start()
                 except:
                     print("Exception happened")
                     traceback.print_exc()
