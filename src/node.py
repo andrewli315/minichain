@@ -40,10 +40,8 @@ class node:
         target = self.minichain.getTarget()
         m = hashlib.sha256()
         while True:
-            if self.getHeaderFlag == True:
-                print(self.getHeaderFlag)
-                prev_hash = self.minichain.getPrevHash()
-                continue
+                        
+            prev_hash = self.minichain.getPrevHash()          
             rand_num = hex(random.randint(0,4294967295))[2:]
             nonce = '0'*(8-len(rand_num)) + rand_num
     
