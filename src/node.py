@@ -258,7 +258,7 @@ class node:
     def handle_p2p_client(self,client_socket, addr):
         while True:
             try:
-                msg = client_socket.recv(4096)
+                data = client_socket.recv(4096)
                 if len(data) > 0:
                     req = data.decode('utf-8')
                     request = json.loads(req)
