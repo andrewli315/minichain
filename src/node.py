@@ -41,6 +41,7 @@ class node:
         m = hashlib.sha256()
         while True:
             if self.getHeaderFlag == True:
+                print(self.getHeaderFlag)
                 prev_hash = self.minichain.getPrevHash()
                 continue
             rand_num = hex(random.randint(0,4294967295))[2:]

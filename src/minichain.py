@@ -115,7 +115,7 @@ class minichain:
     def getBlockIndex(self, block_hash):
         idx = 0
         while True:
-            search_hash = self.getBlockHashbyIndex(idx)
+            search_hash = self.getBlockHashByIndex(idx)
             if block_hash == search_hash:
                 return idx
             elif search_hash == None:
