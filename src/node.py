@@ -162,7 +162,7 @@ class node:
             return self.RespondTemplate(0,None)      
         return self.RespondTemplate(2,None)
     # make sure the fork is the longest 
-    def check_fork(self,prev_hash, recent_hash, block_height, addr):
+    def check_fork(self,block_height + 1 , prev_hash, recent_hash, addr):
         print("[GET FORK]")
         p2p_port = self.getNeighbor(addr)
         try:
