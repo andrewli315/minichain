@@ -103,7 +103,7 @@ class minichain:
                 break
             idx = idx + 1
         return None
-    def getBlocks(self, count, hash_begin, hash_stop):
+    def getBlocks(self, count, hash_begin, hash_stop):        
         idx = self.getBlockIndex(hash_begin)
         begin = idx + 1
         stop = idx + count + 1
@@ -114,6 +114,8 @@ class minichain:
             result.append(block_header)
         return result
     def getBlockIndex(self, block_hash):
+        if block_hash == '0'*64:
+            return -1
         idx = 0
         while True:
             search_hash = self.getBlockHashByIndex(idx)

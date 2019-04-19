@@ -41,7 +41,6 @@ class node:
         while True:
             if self.getHeaderFlag:
                 prev_hash = self.minichain.getPrevHash()
-                print(prev_hash)
                 continue
                         
             rand_num = hex(random.randint(0,4294967295))[2:]
@@ -151,7 +150,7 @@ class node:
             else:
                 if block_index > self.index:
                     print("[CHEACK FOR FORK]")
-                    self.check_fork(prev_hash, block_hash, block_index, addr)
+                    self.check_fork('0'*64, block_hash, block_index, addr)
                     self.pauseMining(False)
                     
                 else:
@@ -171,37 +170,14 @@ class node:
             client.connect((str(addr), p2p_port))
         except:
             print("EXCEPT")
-        idx = self.index
-        hash_begin = self.minichain.getBlockHashByIndex(idx)
-        # update the latest block one by one.
-        # otherwise, find the common block hash with one another node to be hash_begin      
         
-        while True:            
-            ret = self.getBlocks( block_height - idx , hash_begin, recent_hash , client)
-            print(ret)
-            respond = json.loads(ret)
-            print(respond)
-            if respond["error"] == 1:
-                if idx == 0:
-                    hash_begin = '0000000000000000000000000000000000000000000000000000000000000000'
-                    continue
-                idx = idx - 1
-                hash_begin = self.minichain.getBlockHashByIndex(idx) 
-            elif respond["error"] == 0:
-                if not idx == block_height-1:
-                    print("sucess")
-                else:
-                    idx = idx + 1
-                    for block in respond["data"]:
-                        #check the block
-                        m = hashlib.sha256()
-                        m.update(block)
-                        block_hash = m.hexdiget()
-                        with self.mutex:
-                            self.minichain.insertBlock(block , block_hash,idx)  
-                        idx = idx + 1
-                    self.index = idx
-                    break
+        ret = self.getBlocks(prev_hash, recent_hash,block_height, client)
+        respond = json.loads(ret)
+        print(respond)
+        respond = json.loads(respond)
+        idx = 0
+        for item in repond['result']:
+            print(item)
         return True
 
     def process_rpc_request(self,request):
