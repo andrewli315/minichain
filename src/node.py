@@ -19,6 +19,7 @@ class node:
         self.neighbors = neighbors
         self.minichain = minichain
         self.getHeaderFlag = False
+        self.prev_hash = '0'*64
         self.index = -1
     def pauseMining(self,flag):
         self.getHeaderFlag = flag
@@ -34,7 +35,7 @@ class node:
         print('[MINING]')
         diff = self.minichain.getDifficult()
         version = self.minichain.getVersion()
-        prev_hash = self.minichain.getPrevHash()
+        self.prev_hash = self.minichain.getPrevHash()
         merkle_root = self.minichain.getMerkleRoot()
         target = self.minichain.getTarget()
         m = hashlib.sha256()
@@ -57,7 +58,7 @@ class node:
                     self.index = self.index + 1
                     self.minichain.insertBlock(block_header, recent_hash,self.index)
                     self.sendHeader(block_header, recent_hash, self.minichain.getIndex())
-                    prev_hash = recent_hash            
+                    self.prev_hash = recent_hash            
 
     def checkHash(self,recent_hash):
         diff = str(self.minichain.getTarget()).index('1')
@@ -175,13 +176,15 @@ class node:
         respond = json.loads(ret)
         print(respond)
         respond = json.loads(respond)
-        idx = 0
-        
+        idx = 0        
         for item in respond['result']:
             h = hashlib.sha256(item.encode('utf-8')).hexdigest()
-                       
-            print(item)
-            print(h)
+            recent_hash = h
+            with self.mutex:
+                self.minichain.insertBlock(item, h, idx )
+            idx = idx + 1
+        self.index = idx   
+        self.recent_hash
         return True
 
     def process_rpc_request(self,request):

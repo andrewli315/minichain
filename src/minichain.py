@@ -49,8 +49,7 @@ class minichain:
                         },
                     "block_hash" : self.current_hash
                     }
-            #if not self.valid_block(prev_hash):
-            
+            #if not self.valid_block(prev_hash):            
             with open(self.DIR+'/'+str(self.index)+'.json', 'w+') as f:
                 f.write(json.dumps(block))
                 f.flush()
