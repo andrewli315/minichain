@@ -107,7 +107,7 @@ class node:
                     }
                 }
         client.send(json.dumps(payload).encode('utf-8'))
-        result = client.recv(4096)
+        result = client.recv()
         respond = self.RespondTemplate(0,None)
         client.send(respond.encode('utf-8'))
         return result.decode('utf-8')
@@ -221,14 +221,14 @@ class node:
     def handle_rpc_client(self,client_socket, addr):
         while True:
             try: 
-                data = client_socket.recv(1000000000000)
+                data = client_socket.recv(4096)
                 if len(data) > 0:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)
 
                     respond = self.process_rpc_request(request)
                     client_socket.send(json.dumps(respond).encode('utf-8'))
-                    ret = client_socket.recv(2048)
+                    ret = client_socket.recv(4096)
                     print(ret)
                 else:
                     break
