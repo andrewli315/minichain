@@ -41,13 +41,13 @@ class node:
         m = hashlib.sha256()
         while True:
             if self.getHeaderFlag:
-                prev_hash = self.minichain.getPrevHash()
+                self.prev_hash = self.minichain.getBlockHash()
                 continue
                         
             rand_num = hex(random.randint(0,4294967295))[2:]
             nonce = '0'*(8-len(rand_num)) + rand_num
     
-            block_header = version + prev_hash + merkle_root + target + nonce
+            block_header = version + self.prev_hash + merkle_root + target + nonce
             m.update(block_header.encode('utf-8'))
             recent_hash = m.hexdigest()
             # mutex lock for minichain
