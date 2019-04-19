@@ -176,8 +176,12 @@ class node:
         print(respond)
         respond = json.loads(respond)
         idx = 0
-        for item in repond['result']:
+        
+        for item in respond['result']:
+            h = hashlib.sha256(item.encode('utf-8')).hexdigest()
+                       
             print(item)
+            print(h)
         return True
 
     def process_rpc_request(self,request):
