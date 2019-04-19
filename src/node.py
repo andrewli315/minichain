@@ -107,7 +107,9 @@ class node:
                     }
                 }
         client.send(json.dumps(payload).encode('utf-8'))
-        result = client.recv(4096)        
+        result = client.recv(4096)
+        respond = self.RespondTemplate(0,None)
+        client.send(respond.encode('utf-8'))
         return result.decode('utf-8')
 
     def RespondTemplate(self, error, result):
@@ -178,7 +180,10 @@ class node:
         respond = json.loads(respond)
         idx = 0        
         for item in respond['result']:
+            print('-------------------------------------------')
+            print(item)
             h = hashlib.sha256(item.encode('utf-8')).hexdigest()
+            print("-------------------------------------------")
             recent_hash = h
             print(h)
             with self.mutex:
@@ -186,6 +191,8 @@ class node:
             idx = idx + 1
         self.index = idx   
         self.prev_hash = recent_hash
+
+        client.close()
         return True
 
     def process_rpc_request(self,request):
