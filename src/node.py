@@ -221,7 +221,7 @@ class node:
     def handle_rpc_client(self,client_socket, addr):
         while True:
             try: 
-                data = client_socket.recv(4096)
+                data = client_socket.recv(1000000000000)
                 if len(data) > 0:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)
