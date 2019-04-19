@@ -142,11 +142,12 @@ class node:
             block_header = request['data']['block_header']
             prev_hash = block_header[8:72]
             current_hash = self.minichain.getBlockHash()    
-            if current_hash == prev_hash:
+            if self.prev_hash == prev_hash:
                 # the blockchain is latest in previous block
                 with self.mutex:
                     self.index = self.index + 1
                     self.minichain.insertBlock(block_header,block_hash, self.index)
+                    self.prev_hash = block_hash
 
             else:
                 if block_index > self.index:
@@ -174,17 +175,17 @@ class node:
         
         ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
         respond = json.loads(ret)
-        print(respond)
         respond = json.loads(respond)
         idx = 0        
         for item in respond['result']:
             h = hashlib.sha256(item.encode('utf-8')).hexdigest()
             recent_hash = h
+            print(h)
             with self.mutex:
-                self.minichain.insertBlock(item, h, idx )
+                self.minichain.insertBlock(item, recent_hash, idx )
             idx = idx + 1
         self.index = idx   
-        self.recent_hash
+        self.prev_hash = recent_hash
         return True
 
     def process_rpc_request(self,request):
@@ -251,10 +252,13 @@ class node:
                 data = client_socket.recv(4096)
                 if len(data) > 0:
                     req = data.decode('utf-8')                    
-                    request = json.loads(req)
-                    print(request)
+                    request = json.loads(req)                    
                     respond = self.process_p2p_request(request,addr)                    
                     client_socket.send(json.dumps(respond).encode('utf-8'))
+                    data = client_socket.recv(2048)
+                    ret = json.loads(data.decode('utf-8'))
+                    if ret["error"] == 1:
+                        print("Something error")                              
                 else:
                     break
             except:

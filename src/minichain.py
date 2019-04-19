@@ -29,7 +29,6 @@ class minichain:
         return True
     # for insert the latest block
     def insertBlock(self,block_header, block_hash, index):
-        print("insert")
         try:
             self.index = index
             self.current_hash = block_hash
@@ -94,7 +93,6 @@ class minichain:
         while True:
             search_hash = self.getBlockHashByIndex(idx)
             if block_hash == search_hash:
-                print(search_hash)
                 block = json.loads(self.getBlockByIndex(idx))
                 block_header = block['block_header']
                 return json.dumps(block_header)
