@@ -85,6 +85,8 @@ class node:
                 client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
                 client.send(json.dumps(payload).encode('utf-8'))
                 result = client.recv(2048)
+                respond = RespondTemplate(0,None)
+                client.send(respond.encode('utf-8'))
                 client.close()
             except:
                 print("[ERROR] cannot connect to client")
@@ -109,12 +111,10 @@ class node:
         client.send(json.dumps(payload).encode('utf-8'))
         result = b''
         while True:
-            data = client.recv(4096)
-            if len(data):
-                result += data
-            else:
+            result += client.recv(4096)
+            if result.endswith('}'):
                 break
-
+        print(result)
         respond = self.RespondTemplate(0,None)
         client.send(respond.encode('utf-8'))
         return result.decode('utf-8')
