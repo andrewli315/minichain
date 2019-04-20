@@ -15,7 +15,7 @@ def main():
     payload = {
             "method" : "getBlockHash",
             "data" :{
-                "block_height":10
+                "block_height":100
                 }
             }
     

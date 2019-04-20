@@ -196,15 +196,17 @@ class node:
         method = request['method']                
         if method == "getBlockCount":
             count = self.minichain.getIndex()
-            respond = {
-                    "error" : 0,
-                    "result" : count
-                    }
-            return json.dumps(respond)
+
+            respond = self.RespondTemplate(0,count)
+            return respond
         elif method == "getBlockHash":
             index = request['data']['block_height']
-            result = self.minichain.getBlockHashByIndex(index)
-            return self.RespondTemplate(0,result)
+            result = self.minichain.getBlockHashByIndex(index)            
+            if result is None:
+                respond = self.RespondTemplate(1,None)
+            else:
+                respond = self.RespondTemplate(0,result)
+            return respond
 
         elif method == "getBlockHeader":
             block_hash = request['data']['block_hash']
