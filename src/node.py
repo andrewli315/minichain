@@ -175,9 +175,11 @@ class node:
             client.connect((str(addr), p2p_port))
         except:
             print("EXCEPT")
+
         ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
+        print(ret)
         respond = json.loads(ret)
-        respond = json.loads(respond)
+
         idx = 0        
         for item in respond['result']:
             m = hashlib.sha256()
@@ -259,7 +261,7 @@ class node:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)                    
                     respond = self.process_p2p_request(request,addr)                    
-                    client_socket.send(json.dumps(respond).encode('utf-8'))
+                    client_socket.send(respond.encode('utf-8'))
                     #data = client_socket.recv(2048)
                     #print(data)
                     #ret = json.loads(data.decode('utf-8'))
