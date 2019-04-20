@@ -139,7 +139,7 @@ class node:
             else:                
                 return self.RespondTemplate(0,result)
         elif method == "sendHeader":            
-            print("[GET]" + request['data'])
+            print("[GET]" + json.dumps(request))
             self.pauseMining(True)
             block_index = request['data']['block_height']
             block_hash = request['data']['block_hash']
