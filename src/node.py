@@ -186,7 +186,9 @@ class node:
         for item in respond['result']:
             print('-------------------------------------------')
             print(item)
-            h = hashlib.sha256(item.encode('utf-8')).hexdigest()
+            m = hashlib.sha256()
+            m.update(item.encode('utf-8'))
+            h = m.hexdigest()
             print("-------------------------------------------")
             recent_hash = h
             print(h)
