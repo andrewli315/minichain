@@ -38,12 +38,12 @@ class node:
         self.prev_hash = self.minichain.getPrevHash()
         merkle_root = self.minichain.getMerkleRoot()
         target = self.minichain.getTarget()
-        m = hashlib.sha256()
         while True:
             if self.getHeaderFlag:
                 self.prev_hash = self.minichain.getBlockHash()
                 continue
                         
+            m = hashlib.sha256()
             rand_num = hex(random.randint(0,4294967295))[2:]
             nonce = '0'*(8-len(rand_num)) + rand_num
     
@@ -184,14 +184,10 @@ class node:
         respond = json.loads(respond)
         idx = 0        
         for item in respond['result']:
-            print('-------------------------------------------')
-            print(item)
             m = hashlib.sha256()
             m.update(item.encode('utf-8'))
             h = m.hexdigest()
-            print("-------------------------------------------")
             recent_hash = h
-            print(h)
             with self.mutex:
                 self.minichain.insertBlock(item, recent_hash, idx )
             idx = idx + 1
@@ -267,7 +263,8 @@ class node:
                     request = json.loads(req)                    
                     respond = self.process_p2p_request(request,addr)                    
                     client_socket.send(json.dumps(respond).encode('utf-8'))
-                    #data = client_socket.recv(2048)
+                    data = client_socket.recv(2048)
+                    print(data)
                     #ret = json.loads(data.decode('utf-8'))
                     #if ret["error"] == 1:
                     #    print("Something error")                              
