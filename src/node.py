@@ -85,8 +85,8 @@ class node:
                 client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
                 client.send(json.dumps(payload).encode('utf-8'))
                 result = client.recv(2048)
-                respond = RespondTemplate(0,None)
-                client.send(respond.encode('utf-8'))
+                #respond = RespondTemplate(0,None)
+                #client.send(respond.encode('utf-8'))
                 client.close()
             except:
                 print("[ERROR] cannot connect to client")
@@ -108,12 +108,10 @@ class node:
                     "hash_stop"  : hash_stop
                     }
                 }
-        print(payload)
         client.send(json.dumps(payload).encode('utf-8'))
         result = client.recv(0x7FFFFFFF)
-        print(result)
-        respond = self.RespondTemplate(0,None)
-        client.send(respond.encode('utf-8'))
+        #respond = self.RespondTemplate(0,None)
+        #client.send(respond.encode('utf-8'))
         return result.decode('utf-8')
 
     def RespondTemplate(self, error, result):
@@ -263,8 +261,8 @@ class node:
                     request = json.loads(req)                    
                     respond = self.process_p2p_request(request,addr)                    
                     client_socket.send(json.dumps(respond).encode('utf-8'))
-                    data = client_socket.recv(2048)
-                    print(data)
+                    #data = client_socket.recv(2048)
+                    #print(data)
                     #ret = json.loads(data.decode('utf-8'))
                     #if ret["error"] == 1:
                     #    print("Something error")                              
