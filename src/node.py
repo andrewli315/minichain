@@ -145,11 +145,11 @@ class node:
             block_hash = request['data']['block_hash']
             block_header = request['data']['block_header']
             prev_hash = block_header[8:72]
-            current_hash = self.minichain.getBlockHash()    
+            current_hash = self.minichain.getBlockHash()            
             if self.prev_hash == prev_hash:
                 # the blockchain is latest in previous block
                 with self.mutex:
-                    self.index = self.index + 1
+                    self.index = block_index
                     self.minichain.insertBlock(block_header,block_hash, self.index)
                     self.prev_hash = block_hash
 
@@ -188,9 +188,8 @@ class node:
             with self.mutex:
                 self.minichain.insertBlock(item, recent_hash, idx )
             idx = idx + 1
-        print(idx)
-        print(self.index)
         self.index = idx 
+        print(self.index)
         self.prev_hash = recent_hash
         client.close()
         return True
