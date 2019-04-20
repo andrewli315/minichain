@@ -175,9 +175,8 @@ class node:
             client.connect((str(addr), p2p_port))
         except:
             print("EXCEPT")
-        
+        print(block_height)        
         ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
-        print(ret)
         respond = json.loads(ret)
         respond = json.loads(respond)
         idx = 0        
@@ -189,7 +188,9 @@ class node:
             with self.mutex:
                 self.minichain.insertBlock(item, recent_hash, idx )
             idx = idx + 1
-        self.index = idx   
+        print(idx)
+        print(self.index)
+        self.index = idx 
         self.prev_hash = recent_hash
         client.close()
         return True

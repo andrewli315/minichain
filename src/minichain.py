@@ -102,12 +102,13 @@ class minichain:
         return None
     def getBlocks(self, count, hash_begin, hash_stop):        
         idx = self.getBlockIndex(hash_begin)
-        begin = idx + 1
+        begin = idx
         stop = idx + count + 1
         result = []
         print(begin)
         print(stop)
         for i in range(begin, stop):
+            print(i)
             data = self.getBlockByIndex(i)
             if data is None:
                 break
@@ -117,7 +118,7 @@ class minichain:
         return result
     def getBlockIndex(self, block_hash):
         if block_hash == '0'*64:
-            return -1
+            return 0
         idx = 0
         while True:
             search_hash = self.getBlockHashByIndex(idx)
