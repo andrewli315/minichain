@@ -139,7 +139,7 @@ class node:
             else:                
                 return self.RespondTemplate(0,result)
         elif method == "sendHeader":            
-            print("[GET]")
+            print("[GET]" + request['data'])
             self.pauseMining(True)
             block_index = request['data']['block_height']
             block_hash = request['data']['block_hash']
@@ -159,7 +159,7 @@ class node:
                     self.pauseMining(False)
                     
                 else:
-                    print("My chain is longer than him")
+                    print("My blockchain is longer")
                     self.pauseMining(False)                    
                     return self.RespondTemplate(1,None)
 
@@ -175,7 +175,6 @@ class node:
             client.connect((str(addr), p2p_port))
         except:
             print("EXCEPT")
-        print(block_height)        
         ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
         respond = json.loads(ret)
         respond = json.loads(respond)
@@ -189,7 +188,6 @@ class node:
                 self.minichain.insertBlock(item, recent_hash, idx )
             idx = idx + 1
         self.index = idx 
-        print(self.index)
         self.prev_hash = recent_hash
         client.close()
         return True
@@ -227,7 +225,6 @@ class node:
                     respond = self.process_rpc_request(request)
                     client_socket.send(json.dumps(respond).encode('utf-8'))
                     ret = client_socket.recv(4096)
-                    print(ret)
                 else:
                     break
             except:
