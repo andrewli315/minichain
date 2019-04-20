@@ -107,7 +107,14 @@ class node:
                     }
                 }
         client.send(json.dumps(payload).encode('utf-8'))
-        result = client.recv()
+        result = b''
+        while True:
+            data = client.recv(4096)
+            if len(data):
+                result += data
+            else:
+                break
+
         respond = self.RespondTemplate(0,None)
         client.send(respond.encode('utf-8'))
         return result.decode('utf-8')
