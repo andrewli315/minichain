@@ -109,11 +109,7 @@ class node:
                     }
                 }
         client.send(json.dumps(payload).encode('utf-8'))
-        result = b''
-        while True:
-            result += client.recv(4096)
-            if result.endswith('}'):
-                break
+        result += client.recv(0x7FFFFFFF)
         print(result)
         respond = self.RespondTemplate(0,None)
         client.send(respond.encode('utf-8'))
@@ -270,8 +266,8 @@ class node:
                     request = json.loads(req)                    
                     respond = self.process_p2p_request(request,addr)                    
                     client_socket.send(json.dumps(respond).encode('utf-8'))
-                    data = client_socket.recv(2048)
-                    ret = json.loads(data.decode('utf-8'))
+                    #data = client_socket.recv(2048)
+                    #ret = json.loads(data.decode('utf-8'))
                     if ret["error"] == 1:
                         print("Something error")                              
                 else:
