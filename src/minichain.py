@@ -105,10 +105,7 @@ class minichain:
         begin = idx
         stop = idx + count + 1
         result = []
-        print(begin)
-        print(stop)
         for i in range(begin, stop):
-            print(i)
             data = self.getBlockByIndex(i)
             if data is None:
                 break
