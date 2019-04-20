@@ -187,7 +187,7 @@ class node:
             with self.mutex:
                 self.minichain.insertBlock(item, recent_hash, idx )
             idx = idx + 1
-        self.index = idx 
+        self.index = idx - 1
         self.prev_hash = recent_hash
         client.close()
         return True

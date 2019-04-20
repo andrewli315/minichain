@@ -11,18 +11,20 @@ def main():
     port = 4444
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((host,port))
-    
+        
     payload = {
             "method" : "getBlockHash",
             "data" :{
-                "block_height":100
+                "block_height":45
                 }
             }
+    
     
     """
     payload = {
             "method" : "getBlockCount"
         }
+    
     """
     """
     payload = {
