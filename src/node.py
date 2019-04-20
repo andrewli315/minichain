@@ -108,6 +108,7 @@ class node:
                     "hash_stop"  : hash_stop
                     }
                 }
+        print(payload)
         client.send(json.dumps(payload).encode('utf-8'))
         result = client.recv(0x7FFFFFFF)
         print(result)
@@ -155,8 +156,7 @@ class node:
                     self.prev_hash = block_hash
 
             else:
-                if block_index > self.index:
-                    print("[CHEACK FOR FORK]")
+                if block_index > self.index:                    
                     self.check_fork('0'*64, block_hash, block_index, addr)
                     self.pauseMining(False)
                     
@@ -170,7 +170,7 @@ class node:
         return self.RespondTemplate(2,None)
     # make sure the fork is the longest 
     def check_fork(self, prev_hash, recent_hash,block_height, addr):
-        print("[GET FORK]")
+        print("[SYNC FORK]")
         p2p_port = self.getNeighbor(addr)
         try:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -195,7 +195,6 @@ class node:
             idx = idx + 1
         self.index = idx   
         self.prev_hash = recent_hash
-
         client.close()
         return True
 
