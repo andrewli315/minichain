@@ -109,7 +109,7 @@ class node:
                     }
                 }
         client.send(json.dumps(payload).encode('utf-8'))
-        result += client.recv(0x7FFFFFFF)
+        result = client.recv(0x7FFFFFFF)
         print(result)
         respond = self.RespondTemplate(0,None)
         client.send(respond.encode('utf-8'))
@@ -268,8 +268,8 @@ class node:
                     client_socket.send(json.dumps(respond).encode('utf-8'))
                     #data = client_socket.recv(2048)
                     #ret = json.loads(data.decode('utf-8'))
-                    if ret["error"] == 1:
-                        print("Something error")                              
+                    #if ret["error"] == 1:
+                    #    print("Something error")                              
                 else:
                     break
             except:
