@@ -85,8 +85,7 @@ class node:
                 client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
                 client.send(json.dumps(payload).encode('utf-8'))
                 result = client.recv(2048)
-                #respond = RespondTemplate(0,None)
-                #client.send(respond.encode('utf-8'))
+                print(result)
                 client.close()
             except:
                 print("[ERROR] cannot connect to client")
@@ -110,8 +109,7 @@ class node:
                 }
         client.send(json.dumps(payload).encode('utf-8'))
         result = client.recv(0x7FFFFFFF)
-        #respond = self.RespondTemplate(0,None)
-        #client.send(respond.encode('utf-8'))
+        respond = self.RespondTemplate(0,None)
         return result.decode('utf-8')
 
     def RespondTemplate(self, error, result):
@@ -127,7 +125,7 @@ class node:
                     }
             return json.dumps(respond)
 
-    def process_p2p_request(self, request,addr):
+    def process_p2p_request(self, request,addr):        
         method = request['method']
         if method == "getBlocks":
             count = request['data']['hash_count']
@@ -228,6 +226,7 @@ class node:
                     respond = self.process_rpc_request(request)
                     client_socket.send(json.dumps(respond).encode('utf-8'))
                     ret = client_socket.recv(4096)
+                    print(ret)
                 else:
                     break
             except:
@@ -261,11 +260,6 @@ class node:
                     request = json.loads(req)                    
                     respond = self.process_p2p_request(request,addr)                    
                     client_socket.send(respond.encode('utf-8'))
-                    #data = client_socket.recv(2048)
-                    #print(data)
-                    #ret = json.loads(data.decode('utf-8'))
-                    #if ret["error"] == 1:
-                    #    print("Something error")                              
                 else:
                     break
             except:
