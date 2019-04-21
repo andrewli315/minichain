@@ -1,7 +1,8 @@
 # MiniChain
 
 The implementation of a micro blockchain for course "Blockchain Introduction"
-
+The function of transaction and wallet is the aim of next homework.
+This version is just to make a p2p network to broadcast blocks and node's status rpc.
 
 ### minichain block header format
 
