@@ -85,7 +85,9 @@ class node:
                 client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
                 client.send(json.dumps(payload).encode('utf-8'))
                 result = client.recv(2048)
-                print(result)
+                repond = json.loads(result)
+                if respond['error'] == 1:
+                    print("Client error occur")
                 client.close()
             except:
                 print("[ERROR] cannot connect to client")
@@ -224,9 +226,7 @@ class node:
                     request = json.loads(req)
 
                     respond = self.process_rpc_request(request)
-                    client_socket.send(json.dumps(respond).encode('utf-8'))
-                    ret = client_socket.recv(4096)
-                    print(ret)
+                    client_socket.send(json.dumps(respond).encode('utf-8'))                    
                 else:
                     break
             except:
