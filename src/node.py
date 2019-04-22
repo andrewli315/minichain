@@ -80,7 +80,6 @@ class node:
         print("[SEND] " + json.dumps(payload))
 
         for neighbor in neighbors:
-            print(neighbor.getAddr())
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
                 client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
@@ -181,16 +180,15 @@ class node:
     # make sure the fork is the longest 
     def check_fork(self, prev_hash, recent_hash,block_height, addr):
         print("[SYNC FORK]")
-        p2p_port = self.getNeighbor(addr)
         try:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.connect((str(addr), p2p_port))
+            client.connect(addr)
         except:
             print("EXCEPT")
 
         ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
+		print(ret)
         respond = json.loads(ret)
-
         idx = 0        
         for item in respond['result']:
             m = hashlib.sha256()
@@ -288,7 +286,7 @@ class node:
             while True:
                 c, addr = s.accept()
                 try:
-                    threading.Thread(target=self.handle_p2p_client, args=(c, addr[0])).start()
+                    threading.Thread(target=self.handle_p2p_client, args=(c, addr)).start()
                 except:
                     print("Exception happened")
                     traceback.print_exc()
