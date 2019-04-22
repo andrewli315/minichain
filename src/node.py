@@ -182,7 +182,7 @@ class node:
         print("[SYNC FORK]")
         try:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			print(addr)
+            print(addr)
             client.connect(addr)
         except:
             print("EXCEPT")
