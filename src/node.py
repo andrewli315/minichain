@@ -80,6 +80,7 @@ class node:
         print("[SEND] " + json.dumps(payload))
 
         for neighbor in neighbors:
+            print(neighbor.getAddr())
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
                 client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
@@ -364,8 +365,9 @@ if __name__ == '__main__':
         config = json.loads(data.read())
     
     neighbors = []
-    neighbors.append(Neighbor(str(config['neighbor_list'][0])))
-    ip, p2p_port = neighbors[0].getP2PConfig()
+    for item in config['neighbor_list']:
+        neighbors.append(Neighbor(str(item)))
+        ip, p2p_port = neighbors[0].getP2PConfig()
     
     diff = config['target']
 
