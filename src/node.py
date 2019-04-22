@@ -187,7 +187,7 @@ class node:
             print("EXCEPT")
 
         ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
-		print(ret)
+        print(ret)
         respond = json.loads(ret)
         idx = 0        
         for item in respond['result']:
