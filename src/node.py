@@ -85,13 +85,12 @@ class node:
                 client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
                 client.send(json.dumps(payload).encode('utf-8'))
                 result = client.recv(2048)
+                client.close()
                 repond = json.loads(result)
                 if respond['error'] == 1:
-                    print("Client error occur")
-                client.close()
+                    print("Server Error Occur")                
             except:
-                print("[ERROR] cannot connect to client")
-                continue
+                continue            
         
 
     def getNeighbor(self, addr):
@@ -145,27 +144,39 @@ class node:
             block_hash = request['data']['block_hash']
             block_header = request['data']['block_header']
             prev_hash = block_header[8:72]
-            current_hash = self.minichain.getBlockHash()            
-            if self.prev_hash == prev_hash:
+            current_hash = self.minichain.getBlockHash()
+            if self.block_is_valid(block_hash,block_header) == True:
+                
+                if self.prev_hash == prev_hash:
                 # the blockchain is latest in previous block
-                with self.mutex:
-                    self.index = block_index
-                    self.minichain.insertBlock(block_header,block_hash, self.index)
-                    self.prev_hash = block_hash
-
-            else:
-                if block_index > self.index:                    
-                    self.check_fork('0'*64, block_hash, block_index, addr)
-                    self.pauseMining(False)
-                    
+                    with self.mutex:
+                        self.index = block_index
+                        self.minichain.insertBlock(block_header,block_hash, self.index)
+                        self.prev_hash = block_hash
+            
                 else:
-                    print("My blockchain is longer")
-                    self.pauseMining(False)                    
-                    return self.RespondTemplate(1,None)
-
+                    if block_index > self.index:                    
+                        self.check_fork('0'*64, block_hash, block_index, addr)
+                        self.pauseMining(False)
+                    
+                    else:
+                        print("My blockchain is longer")
+                        self.pauseMining(False)                    
+                        return self.RespondTemplate(1,None)
+            else:
+                print("Your Hash is invalid")
+                self.pauseMining(False)      
+                return self.RespondTemplate(1,None)
+            
             self.pauseMining(False)      
             return self.RespondTemplate(0,None)      
         return self.RespondTemplate(2,None)
+    def block_is_valid(self, block_hash, block_header):
+        h = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
+        if h == block_hash:
+            return True
+        else:
+            return False
     # make sure the fork is the longest 
     def check_fork(self, prev_hash, recent_hash,block_height, addr):
         print("[SYNC FORK]")
@@ -259,7 +270,7 @@ class node:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)                    
                     respond = self.process_p2p_request(request,addr)                    
-                    client_socket.send(respond.encode('utf-8'))
+                    client_socket.send(respond.encode('utf-8'))                    
                 else:
                     break
             except:
