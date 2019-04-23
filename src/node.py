@@ -182,7 +182,8 @@ class node:
         for neighbor in self.neighbors:
             try:
                 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                client.connect((self.neighbor.getAddr(),self.neighbor.getp2pPort()))               
+                client.connect((neighbor.getAddr(),neighbor.getp2pPort()))
+                
             except:
                 print("EXCEPT")
             ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
