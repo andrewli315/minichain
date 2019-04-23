@@ -180,18 +180,26 @@ class node:
     # make sure the fork is the longest 
     def check_fork(self, prev_hash, recent_hash,block_height, addr):
         print("[SYNC FORK]")
-        try:
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            print(addr)
-            client.connect(addr)
-        except:
-            print("EXCEPT")
+        max_length = -1
+        """
+            request for each nodes to get the max chain
+        """
+        for nieghbor in self.neighbors:
+            try:
+                client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                print(addr)
+                client.connect(addr)
+            except:
+                print("EXCEPT")
 
-        ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
-        print(ret)
-        respond = json.loads(ret)
-        idx = 0        
-        for item in respond['result']:
+            ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
+            respond = json.loads(ret)
+            chain_length = len(respond['result'])
+            if max_length < chain_length:
+                max_length = chain_length
+                max_chain = respond        
+        idx = 0                
+        for item in max_chain['result']:
             m = hashlib.sha256()
             m.update(item.encode('utf-8'))
             h = m.hexdigest()
