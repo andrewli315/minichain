@@ -1,14 +1,12 @@
 import socket
 import traceback
-import time
-import sys
 import os
 import threading
-from minichain import minichain
 import json
 import hashlib
 import random
 from neighbor import Neighbor
+from minichain import minichain
 
 class node:
     def __init__(self, p2p_port, user_port, neighbors, minichain):
@@ -35,7 +33,14 @@ class node:
                     "error" : error,
                     "result" : result
                     }
-            return json.dumps(respond)        
+            return json.dumps(respond)     
+
+    def block_is_valid(self, block_hash, block_header):
+        h = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
+        if h == block_hash:
+            return True
+        else:
+            return False   
     """
         using proof of work as the consensus algorithm
         h = sha256()
@@ -95,8 +100,9 @@ class node:
                 client.close()
                 repond = json.loads(result)
                 if respond['error'] == 1:
-                    print("Server Error Occur")                
+                    print("[ERROR] INTERNAL ERROR")                
             except:
+            	print("[ERROR] P2P SERVER ERROR")
                 continue            
          
     def getBlocks(self, count, hash_begin, hash_stop,client):
@@ -144,11 +150,11 @@ class node:
                         self.check_fork('0'*64, block_hash, block_index)
                         self.pauseMining(False)                    
                     else:
-                        print("My blockchain is longer")
+                        print("[WARNING] THIS CHAIN IS LONGER")
                         self.pauseMining(False)                    
                         return self.RespondTemplate(1,None)
             else:
-                print("Your Hash is invalid")
+                print("[ERROR] INVALID HASH")
                 self.pauseMining(False)      
                 # hash invalid error
                 return self.RespondTemplate(1,None)
@@ -156,12 +162,7 @@ class node:
             return self.RespondTemplate(0,None)    
         # unknown method error      
         return self.RespondTemplate(2,None)
-    def block_is_valid(self, block_hash, block_header):
-        h = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
-        if h == block_hash:
-            return True
-        else:
-            return False
+
     def getMaxFork(self, max_chain):
     	idx = 0                
         for item in max_chain['result']:
@@ -332,7 +333,6 @@ class node:
 
     def start_node(self):
         print("[RUNNING]")
-        
         self.resume()
         # start mining thread
         try:
@@ -349,25 +349,4 @@ class node:
             p2p_server_thread._stop()
             rpc_server_thread._stop()
             sys.exit(1)
-
         
-
-if __name__ == '__main__':
-    with open('config.json') as data:
-        config = json.loads(data.read())
-    
-    neighbors = []
-    for item in config['neighbor_list']:
-        neighbors.append(Neighbor(str(item)))
-        ip, p2p_port = neighbors[0].getP2PConfig()
-    
-    diff = config['target']
-
-    chain = minichain(diff)
-
-    node1 = node(config['p2p_port'], config['user_port'], neighbors, chain)
-    try:
-        node1.start_node()
-    except KeyboardInterrupt:
-        sys.exit(1)
-

@@ -48,8 +48,8 @@ class minichain:
                         },
                     "block_hash" : self.current_hash
                     }
-            #if not self.valid_block(prev_hash):            
-            with open(self.DIR+'/'+str(self.index)+'.json', 'w+') as f:
+            file_name = self.DIR + '/' + str(self.index) + '.json'
+            with open(file_name , 'w+') as f:
                 f.write(json.dumps(block))
                 f.flush()
             f.close()
@@ -57,13 +57,7 @@ class minichain:
             print("Except")
             return False
         return True
-    def valid_block(self, prev_hash):
-        valid = self.getBlockHeader(prev_hash)
-        if valid is None:
-            return False
-        else:
-            return True
-
+    
     def updateBlock(self,block,idx):
         self.version = block['block_header']['version']
         self.prev_hash = block['block_header']['prev_block']
@@ -71,9 +65,11 @@ class minichain:
         self.merkle_root = block['block_header']['merkle_root']
         self.current_hash = block['block_hash']
         self.index = idx
+    
     def getBlockHashByIndex(self,index):
-        if os.path.isfile(self.DIR + '/' + str(index) + '.json'):
-            with open(self.DIR + '/' + str(index) + '.json', 'r') as f:
+        file_name = self.DIR + '/' + str(index) + '.json'
+        if os.path.isfile(file_name):
+            with open(file_name, 'r') as f:
                 block = json.load(f)
                 block_hash = block['block_hash']
                 return block_hash
@@ -86,8 +82,7 @@ class minichain:
                 block = json.load(f)           
                 return json.dumps(block)
         return None
-    def getIndex(self):
-        return self.index
+
     def getBlockHeader(self,block_hash):
         idx = 0
         while True:
@@ -110,9 +105,14 @@ class minichain:
             if data is None:
                 break
             block = json.loads(data)
-            block_header = block['block_header']['version'] + block['block_header']['prev_block'] + block['block_header']['merkle_root'] + block['block_header']['target'] + block['block_header']['nonce']
+            block_header = block['block_header']['version'] 
+            block_header += block['block_header']['prev_block']
+            block_header += block['block_header']['merkle_root'] 
+            block_header += block['block_header']['target'] 
+            block_header += block['block_header']['nonce']
             result.append(block_header)
         return result
+
     def getBlockIndex(self, block_hash):
         if block_hash == '0'*64:
             return 0
@@ -124,15 +124,24 @@ class minichain:
             elif search_hash == None:
                 break
         return -1
+
+    def getIndex(self):
+        return self.index
+
     def getBlockHash(self):
         return self.current_hash
+
     def getDifficult(self):
         return self.target
+
     def getPrevHash(self):
         return self.prev_hash
+
     def getVersion(self):
         return self.version
+
     def getMerkleRoot(self):
         return self.merkle_root
+
     def getTarget(self):
         return self.target
