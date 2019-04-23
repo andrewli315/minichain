@@ -230,7 +230,7 @@ class node:
             else:     
                 return self.RespondTemplate(0,json.loads(result))
 
-    def handle_rpc_client(self,client_socket):
+    def handle_rpc_client(self,client_socket,addr):
         while True:
             try: 
                 data = client_socket.recv(4096)
@@ -257,14 +257,14 @@ class node:
             while True:
                 c, addr = s.accept()
                 try:
-                    threading.Thread(target=self.handle_rpc_client, args=(c)).start()
+                    threading.Thread(target=self.handle_rpc_client, args=(c,addr)).start()
                 except:
                     print("Exception happened")
                     traceback.print_exc()
             s.close()
 
     # handle the p2p client request.
-    def handle_p2p_client(self,client_socket):
+    def handle_p2p_client(self,client_socket,addr):
         while True:
             try:
                 data = client_socket.recv(4096)
@@ -289,7 +289,7 @@ class node:
             while True:
                 c, addr = s.accept()
                 try:
-                    threading.Thread(target=self.handle_p2p_client, args=(c)).start()
+                    threading.Thread(target=self.handle_p2p_client, args=(c,addr)).start()
                 except:
                     print("Exception happened")
                     traceback.print_exc()
