@@ -182,10 +182,9 @@ class node:
         for neighbor in self.neighbors:
             try:
                 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                client.connect((neighbor.getAddr(),neighbor.getp2pPort()))               
+                client.connect((self.neighbor.getAddr(),self.neighbor.getp2pPort()))               
             except:
                 print("EXCEPT")
-
             ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
             respond = json.loads(ret)
             if respond['result'] is not None:
@@ -213,7 +212,6 @@ class node:
         method = request['method']                
         if method == "getBlockCount":
             count = self.minichain.getIndex()
-
             respond = self.RespondTemplate(0,count)
             return respond
         elif method == "getBlockHash":

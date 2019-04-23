@@ -10,6 +10,9 @@ class Neighbor:
         self.ip = json_str['ip']
         self.p2p_port = json_str['p2p_port']
         self.user_port = json_str['user_port']
+    def info(self):
+        print('ip : ' + self.ip)
+        print('p2p port : ' + str(self.p2p_port))     
     def getAddr(self):
         return self.ip
     def getp2pPort(self):
