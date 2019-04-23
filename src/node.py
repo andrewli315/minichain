@@ -93,11 +93,6 @@ class node:
                 continue            
         
 
-    def getNeighbor(self, addr):
-        for neighbor in self.neighbors:
-            if addr == neighbor.getAddr():
-                return neighbor.getp2pPort()
-    
     
     def getBlocks(self, count, hash_begin, hash_stop,client):
         payload = {
@@ -126,7 +121,7 @@ class node:
                     }
             return json.dumps(respond)
 
-    def process_p2p_request(self, request,addr):        
+    def process_p2p_request(self, request): 
         method = request['method']
         if method == "getBlocks":
             count = request['data']['hash_count']
@@ -156,7 +151,7 @@ class node:
             
                 else:
                     if block_index > self.index:                    
-                        self.check_fork('0'*64, block_hash, block_index, addr)
+                        self.check_fork('0'*64, block_hash, block_index)
                         self.pauseMining(False)
                     
                     else:
@@ -178,7 +173,7 @@ class node:
         else:
             return False
     # make sure the fork is the longest 
-    def check_fork(self, prev_hash, recent_hash,block_height, addr):
+    def check_fork(self, prev_hash, recent_hash,block_height):
         print("[SYNC FORK]")
         max_length = -1
         """
@@ -187,8 +182,7 @@ class node:
         for nieghbor in self.neighbors:
             try:
                 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                print(addr)
-                client.connect(addr)
+                client.connect((neighbor.getAddr(),neighbor.getp2pPort()))
             except:
                 print("EXCEPT")
 
@@ -236,7 +230,7 @@ class node:
             else:     
                 return self.RespondTemplate(0,json.loads(result))
 
-    def handle_rpc_client(self,client_socket, addr):
+    def handle_rpc_client(self,client_socket):
         while True:
             try: 
                 data = client_socket.recv(4096)
@@ -270,14 +264,14 @@ class node:
             s.close()
 
     # handle the p2p client request.
-    def handle_p2p_client(self,client_socket, addr):
+    def handle_p2p_client(self,client_socket):
         while True:
             try:
                 data = client_socket.recv(4096)
                 if len(data) > 0:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)                    
-                    respond = self.process_p2p_request(request,addr)                    
+                    respond = self.process_p2p_request(request)                    
                     client_socket.send(respond.encode('utf-8'))                    
                 else:
                     break
