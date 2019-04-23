@@ -179,10 +179,10 @@ class node:
         """
             request for each nodes to get the max chain
         """
-        for nieghbor in self.neighbors:
+        for neighbor in self.neighbors:
             try:
                 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                client.connect((neighbor.getAddr(),neighbor.getp2pPort()))
+                client.connect((neighbor.getAddr(),neighbor.getp2pPort()))               
             except:
                 print("EXCEPT")
 
