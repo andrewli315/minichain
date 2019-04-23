@@ -24,6 +24,18 @@ class node:
     def pauseMining(self,flag):
         self.getHeaderFlag = flag
 
+    def RespondTemplate(self, error, result):
+        if result == None:
+            respond={
+                    "error" : error
+                    }
+            return json.dumps(respond)
+        else:
+            respond = {
+                    "error" : error,
+                    "result" : result
+                    }
+            return json.dumps(respond)        
     """
         using proof of work as the consensus algorithm
         h = sha256()
@@ -41,19 +53,14 @@ class node:
         while True:
             if self.getHeaderFlag:
                 self.prev_hash = self.minichain.getBlockHash()
-                continue
-                        
-            m = hashlib.sha256()
+                continue                                    
             rand_num = hex(random.randint(0,4294967295))[2:]
-            nonce = '0'*(8-len(rand_num)) + rand_num
-    
+            # using rand to calculate nonce
+            nonce = '0'*(8-len(rand_num)) + rand_num            
             block_header = version + self.prev_hash + merkle_root + target + nonce
-            m.update(block_header.encode('utf-8'))
-            recent_hash = m.hexdigest()
-            # mutex lock for minichain
-            if self.checkHash(recent_hash):
-                    # insertBlock
-                    # sendBlock              
+            recent_hash = hashlib.sha256((block_header.encode('utf-8'))).hexdigest()
+            # using mutex to avoid race condition            
+            if self.checkHash(recent_hash):                      
                 with self.mutex:
                     self.index = self.index + 1
                     self.minichain.insertBlock(block_header, recent_hash,self.index)
@@ -91,9 +98,7 @@ class node:
                     print("Server Error Occur")                
             except:
                 continue            
-        
-
-    
+         
     def getBlocks(self, count, hash_begin, hash_stop,client):
         payload = {
                 "method" : "getBlocks",
@@ -107,19 +112,6 @@ class node:
         result = client.recv(0x7FFFFFFF)
         respond = self.RespondTemplate(0,None)
         return result.decode('utf-8')
-
-    def RespondTemplate(self, error, result):
-        if result == None:
-            respond={
-                    "error" : error
-                    }
-            return json.dumps(respond)
-        else:
-            respond = {
-                    "error" : error,
-                    "result" : result
-                    }
-            return json.dumps(respond)
 
     def process_p2p_request(self, request): 
         method = request['method']
@@ -140,20 +132,17 @@ class node:
             block_header = request['data']['block_header']
             prev_hash = block_header[8:72]
             current_hash = self.minichain.getBlockHash()
-            if self.block_is_valid(block_hash,block_header) == True:
-                
+            if self.block_is_valid(block_hash,block_header) == True:                
                 if self.prev_hash == prev_hash:
                 # the blockchain is latest in previous block
                     with self.mutex:
                         self.index = block_index
                         self.minichain.insertBlock(block_header,block_hash, self.index)
-                        self.prev_hash = block_hash
-            
+                        self.prev_hash = block_hash            
                 else:
                     if block_index > self.index:                    
                         self.check_fork('0'*64, block_hash, block_index)
-                        self.pauseMining(False)
-                    
+                        self.pauseMining(False)                    
                     else:
                         print("My blockchain is longer")
                         self.pauseMining(False)                    
@@ -161,10 +150,11 @@ class node:
             else:
                 print("Your Hash is invalid")
                 self.pauseMining(False)      
+                # hash invalid error
                 return self.RespondTemplate(1,None)
-            
             self.pauseMining(False)      
-            return self.RespondTemplate(0,None)      
+            return self.RespondTemplate(0,None)    
+        # unknown method error      
         return self.RespondTemplate(2,None)
     def block_is_valid(self, block_hash, block_header):
         h = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
@@ -172,30 +162,8 @@ class node:
             return True
         else:
             return False
-    # make sure the fork is the longest 
-    def check_fork(self, prev_hash, recent_hash,block_height):
-        print("[SYNC FORK]")
-        max_length = -1
-        """
-            request for each nodes to get the max chain
-        """
-        for neighbor in self.neighbors:
-            try:
-                client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                client.connect((neighbor.getAddr(),neighbor.getp2pPort()))
-                
-            except:
-                print("EXCEPT")
-            ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
-            respond = json.loads(ret)
-            if respond['result'] is not None:
-                chain_length = len(respond['result'])
-            else:
-                chain_length = -1
-            if max_length < chain_length:
-                max_length = chain_length
-                max_chain = respond        
-        idx = 0                
+    def getMaxFork(self, max_chain):
+    	idx = 0                
         for item in max_chain['result']:
             m = hashlib.sha256()
             m.update(item.encode('utf-8'))
@@ -206,8 +174,62 @@ class node:
             idx = idx + 1
         self.index = idx - 1
         self.prev_hash = recent_hash
+    # make sure the fork is the longest 
+    def check_fork(self, prev_hash, recent_hash,block_height):
+        print("[SYNC FORK]")
+        max_length = -1
+        # request for each nodes to get the max chain        
+        for neighbor in self.neighbors:
+            try:
+                client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client.connect((neighbor.getAddr(),neighbor.getp2pPort()))
+            except:                
+                continue
+            ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
+            respond = json.loads(ret)
+            if respond['result'] is not None:
+                chain_length = len(respond['result'])
+            else:
+                chain_length = -1
+            if max_length < chain_length:
+                max_length = chain_length
+                max_chain = respond 
+        # update the max fork        
+        self.getMaxFork(max_chain)
         client.close()
         return True
+
+        # handle the p2p client request.
+    def handle_p2p_client(self,client_socket,addr):
+        while True:
+            try:
+                data = client_socket.recv(4096)
+                if len(data) > 0:
+                    req = data.decode('utf-8')                    
+                    request = json.loads(req)                    
+                    respond = self.process_p2p_request(request)                    
+                    client_socket.send(respond.encode('utf-8'))                    
+                else:
+                    break
+            except:
+                traceback.print_exc()
+                break
+        client_socket.close()
+
+
+    def listen_p2p(self):
+        print('[Listen for P2P Request on {} {}]'.format('0.0.0.0', self.p2p_port))
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s :
+            s.bind(('0.0.0.0', self.p2p_port))
+            s.listen(100)
+            while True:
+                c, addr = s.accept()
+                try:
+                    threading.Thread(target=self.handle_p2p_client, args=(c,addr)).start()
+                except:
+                    print("Exception happened")
+                    traceback.print_exc()
+            s.close()
 
     def process_rpc_request(self,request):
         method = request['method']                
@@ -265,40 +287,8 @@ class node:
                     traceback.print_exc()
             s.close()
 
-    # handle the p2p client request.
-    def handle_p2p_client(self,client_socket,addr):
-        while True:
-            try:
-                data = client_socket.recv(4096)
-                if len(data) > 0:
-                    req = data.decode('utf-8')                    
-                    request = json.loads(req)                    
-                    respond = self.process_p2p_request(request)                    
-                    client_socket.send(respond.encode('utf-8'))                    
-                else:
-                    break
-            except:
-                traceback.print_exc()
-                break
-        client_socket.close()
-
-
-    def listen_p2p(self):
-        print('[Listen for P2P Request on {} {}]'.format('0.0.0.0', self.p2p_port))
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s :
-            s.bind(('0.0.0.0', self.p2p_port))
-            s.listen(100)
-            while True:
-                c, addr = s.accept()
-                try:
-                    threading.Thread(target=self.handle_p2p_client, args=(c,addr)).start()
-                except:
-                    print("Exception happened")
-                    traceback.print_exc()
-            s.close()
-    def start_node(self):
-        print("[RUNNING]")
-        if os.path.isdir(self.DIR):
+    def resume(self):
+    	if os.path.isdir(self.DIR):
             print("[CHECKING]")
             idx = 0
             file_is_null = False
@@ -334,17 +324,16 @@ class node:
                         print(json.dumps(block))
                         self.minichain.updateBlock(block,idx-1)
                     self.index = idx - 1
-                    break
-                """
-                    if the genesis file does not exist, skip the checking.
-                """
+                    break                
+                #if the genesis file does not exist, skip the checking.                
                 if not os.path.isfile(file_name) and idx == 0 :
                     break
                 idx = idx + 1
-        # TODO
-        # check if there are blocks in diretories
-        # it might keep mine the hash with last time 
-        # instead of creating the genesis block again.
+
+    def start_node(self):
+        print("[RUNNING]")
+        
+        self.resume()
         # start mining thread
         try:
             mining_thread = threading.Thread(target=self.mining)
