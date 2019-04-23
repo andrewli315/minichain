@@ -188,7 +188,10 @@ class node:
 
             ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
             respond = json.loads(ret)
-            chain_length = len(respond['result'])
+            if respond['result'] is not None:
+                chain_length = len(respond['result'])
+            else:
+                chain_length = -1
             if max_length < chain_length:
                 max_length = chain_length
                 max_chain = respond        
