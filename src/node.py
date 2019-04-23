@@ -257,7 +257,7 @@ class node:
             while True:
                 c, addr = s.accept()
                 try:
-                    threading.Thread(target=self.handle_rpc_client, args=(c, addr)).start()
+                    threading.Thread(target=self.handle_rpc_client, args=(c)).start()
                 except:
                     print("Exception happened")
                     traceback.print_exc()
@@ -289,7 +289,7 @@ class node:
             while True:
                 c, addr = s.accept()
                 try:
-                    threading.Thread(target=self.handle_p2p_client, args=(c, addr)).start()
+                    threading.Thread(target=self.handle_p2p_client, args=(c)).start()
                 except:
                     print("Exception happened")
                     traceback.print_exc()
