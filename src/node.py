@@ -91,7 +91,7 @@ class node:
                 }
         print("[SEND] " + json.dumps(payload))
 
-        for neighbor in neighbors:
+        for neighbor in self.neighbors:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
                 client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
@@ -102,7 +102,7 @@ class node:
                 if respond['error'] == 1:
                     print("[ERROR] INTERNAL ERROR")                
             except:
-            	print("[ERROR] P2P SERVER ERROR")
+                print("[ERROR] P2P SERVER ERROR")
                 continue            
          
     def getBlocks(self, count, hash_begin, hash_stop,client):
@@ -164,7 +164,7 @@ class node:
         return self.RespondTemplate(2,None)
 
     def getMaxFork(self, max_chain):
-    	idx = 0                
+        idx = 0                
         for item in max_chain['result']:
             m = hashlib.sha256()
             m.update(item.encode('utf-8'))
@@ -289,7 +289,7 @@ class node:
             s.close()
 
     def resume(self):
-    	if os.path.isdir(self.DIR):
+        if os.path.isdir(self.DIR):
             print("[CHECKING]")
             idx = 0
             file_is_null = False

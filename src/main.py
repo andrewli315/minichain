@@ -1,4 +1,8 @@
+import json
 import sys
+from neighbor import Neighbor
+from minichain import minichain
+from node import node
 def main():
     with open('config.json') as data:
         config = json.loads(data.read())
