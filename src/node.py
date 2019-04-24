@@ -118,7 +118,6 @@ class node:
         result =''
         while True:
             data = client.recv(4096)
-            print(data)
             result += data.decode('utf-8')
             if len(data) == 0:
                 break
@@ -231,6 +230,7 @@ class node:
                             client_socket.send(respond[i : (i+4090)].encode('utf-8'))
                     else:
                         client_socket.send(respond.encode('utf-8'))
+                    client_socket.send(''.encode('utf-8'))
                 else:
                     break
             except:
