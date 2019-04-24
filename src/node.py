@@ -67,6 +67,8 @@ class node:
             # using mutex to avoid race condition            
             if self.checkHash(recent_hash):                      
                 with self.mutex:
+                    if self.getHeaderFlag:
+                        continue
                     self.index = self.index + 1
                     self.minichain.insertBlock(block_header, recent_hash,self.index)
                     self.sendHeader(block_header, recent_hash, self.minichain.getIndex())
@@ -139,11 +141,21 @@ class node:
             current_hash = self.minichain.getBlockHash()
             if self.block_is_valid(block_hash,block_header) == True:                
                 if self.prev_hash == prev_hash:
-                # the blockchain is latest in previous block
-                    with self.mutex:
-                        self.index = block_index
-                        self.minichain.insertBlock(block_header,block_hash, self.index)
-                        self.prev_hash = block_hash            
+                    # prevent block overlapping and race condition
+                    if self.index == block_index:
+                        # abort this block
+                        return self.RespondTemplate(1,None)
+                    # the blockchain is latest in previous block
+                    elif self.index == (block_index-1):
+                        with self.mutex:
+                            self.index = block_index
+                            self.minichain.insertBlock(block_header,block_hash, self.index)
+                            self.prev_hash = block_hash
+                        self.pauseMining(False)
+                        return self.RespondTemplate(0,None)
+                    else:
+                        return self.RespondTemplate(1,None)
+                
                 else:
                     if block_index > self.index:                    
                         self.check_fork('0'*64, block_hash, block_index)
@@ -158,7 +170,6 @@ class node:
                 # hash invalid error
                 return self.RespondTemplate(1,None)
             self.pauseMining(False)      
-            return self.RespondTemplate(0,None)    
         # unknown method error      
         return self.RespondTemplate(2,None)
 
