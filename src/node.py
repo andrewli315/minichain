@@ -118,6 +118,7 @@ class node:
         result =''
         while True:
             data = client.recv(4096)
+            print(data)
             if len(result) > 0:
                 result += data.decode('utf-8')
             else:
@@ -131,7 +132,6 @@ class node:
             hash_begin = request['data']['hash_begin']
             hash_stop = request['data']['hash_stop']
             result = self.minichain.getBlocks(count,hash_begin, hash_stop)
-            print(result)
             if result == None:               
                 return self.RespondTemplate(1,None)
             else:                
@@ -227,9 +227,9 @@ class node:
                     respond = self.process_p2p_request(request)
                     if len(respond) > 4096:
                         for line in range(0, len(respond),4090):
-                            client_socket.send(respond[line,line+4090].decode('utf-8'))
+                            client_socket.send(respond[line,line+4090].encode('utf-8'))
                     else:
-                        client_socket.send(respond.decode('utf-8'))
+                        client_socket.send(respond.encode('utf-8'))
                 else:
                     break
             except:
