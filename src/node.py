@@ -119,10 +119,8 @@ class node:
         while True:
             data = client.recv(4096)
             result += data.decode('utf-8')
-            print(data)
-            if len(data) <= 0:
+            if len(data) < 4096:
                 break
-        print(result)
         return result
 
     def process_p2p_request(self, request): 
@@ -203,7 +201,6 @@ class node:
             except:                
                 continue
             ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
-            print(ret)
             respond = json.loads(ret)
             if respond['result'] is not None:
                 chain_length = len(respond['result'])
