@@ -133,6 +133,7 @@ class node:
                 return self.RespondTemplate(0,result)
         elif method == "sendHeader":            
             print("[GET]" + json.dumps(request))
+            self.pauseMining(True)
             block_index = request['data']['block_height']
             block_hash = request['data']['block_hash']
             block_header = request['data']['block_header']
@@ -147,7 +148,6 @@ class node:
                         return self.RespondTemplate(1,None)
                     # the blockchain is latest in previous block
                     elif self.index == (block_index-1):
-                        self.pauseMining(True)
                         with self.mutex:
                             self.index = block_index
                             self.minichain.insertBlock(block_header,block_hash, self.index)
@@ -156,11 +156,10 @@ class node:
                         return self.RespondTemplate(0,None)
                     else:
                         return self.RespondTemplate(1,None)
-                
                 else:
                     if block_index > self.index:                    
                         self.check_fork('0'*64, block_hash, block_index)
-                        self.pauseMining(False)                    
+                        self.pauseMining(False)
                     else:
                         print("[WARNING] THIS CHAIN IS LONGER")
                         self.pauseMining(False)                    
