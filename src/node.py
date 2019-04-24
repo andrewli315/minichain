@@ -119,7 +119,8 @@ class node:
         while True:
             data = client.recv(4096)
             result += data.decode('utf-8')
-            if len(data) == 0:
+            print(data)
+            if len(data) <= 0:
                 break
         print(result)
         return result
@@ -225,12 +226,7 @@ class node:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)                    
                     respond = self.process_p2p_request(request)
-                    if len(respond) > 4096:
-                        for i in range(0, len(respond),4090):
-                            client_socket.send(respond[i : (i+4090)].encode('utf-8'))
-                    else:
-                        client_socket.send(respond.encode('utf-8'))
-                    client_socket.send(''.encode('utf-8'))
+                    client_socket.send(respond.encode('utf-8'))
                 else:
                     break
             except:
