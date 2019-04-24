@@ -67,8 +67,6 @@ class node:
             # using mutex to avoid race condition            
             if self.checkHash(recent_hash):                      
                 with self.mutex:
-                    if self.getHeaderFlag:
-                        continue
                     self.index = self.index + 1
                     self.minichain.insertBlock(block_header, recent_hash,self.index)
                     self.sendHeader(block_header, recent_hash, self.minichain.getIndex())
@@ -144,6 +142,7 @@ class node:
                     # prevent block overlapping and race condition
                     if self.index == block_index:
                         print("[WARNING] MINE THE SAME BLOCK")
+                        self.pauseMining(False)
                         # abort this block
                         return self.RespondTemplate(1,None)
                     # the blockchain is latest in previous block
