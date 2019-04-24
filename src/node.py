@@ -1,5 +1,6 @@
 import socket
 import traceback
+import time
 import os
 import threading
 import json
@@ -114,9 +115,16 @@ class node:
                     }
                 }
         client.send(json.dumps(payload).encode('utf-8'))
-        result = client.recv(0x7FFFFFFF)
-        respond = self.RespondTemplate(0,None)
-        return result.decode('utf-8')
+        result =''
+        while True:
+            data = client.recv(4096)
+            print(data)
+            if len(result) > 0:
+                result += data.decode('utf-8')
+            else:
+                break
+        print(result)
+        return result
 
     def process_p2p_request(self, request): 
         method = request['method']
@@ -125,6 +133,7 @@ class node:
             hash_begin = request['data']['hash_begin']
             hash_stop = request['data']['hash_stop']
             result = self.minichain.getBlocks(count,hash_begin, hash_stop)
+            print(result)
             if result == None:               
                 return self.RespondTemplate(1,None)
             else:                
@@ -196,6 +205,8 @@ class node:
             except:                
                 continue
             ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
+            print(ret)
+            time.sleep(2)
             respond = json.loads(ret)
             if respond['result'] is not None:
                 chain_length = len(respond['result'])
@@ -217,7 +228,7 @@ class node:
                 if len(data) > 0:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)                    
-                    respond = self.process_p2p_request(request)                    
+                    respond = self.process_p2p_request(request)        
                     client_socket.send(respond.encode('utf-8'))                    
                 else:
                     break
