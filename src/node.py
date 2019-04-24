@@ -203,11 +203,6 @@ class node:
             except:                
                 continue
             ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
-            print(ret)
-<<<<<<< HEAD
-            time.sleep(2)
-=======
->>>>>>> issue1
             respond = json.loads(ret)
             if respond['result'] is not None:
                 chain_length = len(respond['result'])
