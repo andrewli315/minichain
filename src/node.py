@@ -133,7 +133,6 @@ class node:
                 return self.RespondTemplate(0,result)
         elif method == "sendHeader":            
             print("[GET]" + json.dumps(request))
-            self.pauseMining(True)
             block_index = request['data']['block_height']
             block_hash = request['data']['block_hash']
             block_header = request['data']['block_header']
@@ -143,10 +142,12 @@ class node:
                 if self.prev_hash == prev_hash:
                     # prevent block overlapping and race condition
                     if self.index == block_index:
+                        print("[WARNING] MINE THE SAME BLOCK")
                         # abort this block
                         return self.RespondTemplate(1,None)
                     # the blockchain is latest in previous block
                     elif self.index == (block_index-1):
+                        self.pauseMining(True)
                         with self.mutex:
                             self.index = block_index
                             self.minichain.insertBlock(block_header,block_hash, self.index)
