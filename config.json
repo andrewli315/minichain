@@ -1,11 +1,11 @@
 {
-    "p2p_port": 2222,
-    "user_port": 2223,
+    "p2p_port": 4443,
+    "user_port": 4444,
     "neighbor_list" : [
         {
             "ip": "127.0.0.1",
-            "p2p_port": 4443,
-            "user_port": 4444
+            "p2p_port": 2222,
+            "user_port": 2223
         },
 		{
 			"ip" : "127.0.0.1",

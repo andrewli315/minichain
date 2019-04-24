@@ -118,12 +118,10 @@ class node:
         result =''
         while True:
             data = client.recv(4096)
-            print(data)
             if len(result) > 0:
                 result += data.decode('utf-8')
             else:
                 break
-        print(result)
         return result
 
     def process_p2p_request(self, request): 
@@ -206,7 +204,10 @@ class node:
                 continue
             ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
             print(ret)
+<<<<<<< HEAD
             time.sleep(2)
+=======
+>>>>>>> issue1
             respond = json.loads(ret)
             if respond['result'] is not None:
                 chain_length = len(respond['result'])
@@ -228,8 +229,12 @@ class node:
                 if len(data) > 0:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)                    
-                    respond = self.process_p2p_request(request)        
-                    client_socket.send(respond.encode('utf-8'))                    
+                    respond = self.process_p2p_request(request)
+                    if len(respond) > 4096:
+                        for line in range(0, len(respond),4090):
+                            client_socket.send(respond[line,line+4090].decode('utf-8'))
+                    else:
+                        client_socket.send(respond.decode('utf-8'))
                 else:
                     break
             except:
@@ -282,7 +287,6 @@ class node:
                 if len(data) > 0:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)
-
                     respond = self.process_rpc_request(request)
                     client_socket.send(json.dumps(respond).encode('utf-8'))                    
                 else:
