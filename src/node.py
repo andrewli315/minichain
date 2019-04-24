@@ -97,13 +97,12 @@ class node:
                 client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
                 client.send(json.dumps(payload).encode('utf-8'))
                 result = client.recv(2048)
-                client.close()
-                repond = json.loads(result)
+                respond = json.loads(result.decode('utf-8'))
                 if respond['error'] == 1:
-                    print("[ERROR] INTERNAL ERROR")                
-            except:
-                print("[ERROR] P2P SERVER ERROR")
-                continue            
+                    print("[ERROR] INTERNAL ERROR")
+                client.close()
+            except socket.error:
+                pass       
          
     def getBlocks(self, count, hash_begin, hash_stop,client):
         payload = {

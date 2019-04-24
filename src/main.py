@@ -13,7 +13,6 @@ def main():
         ip, p2p_port = neighbors[0].getP2PConfig()
     
     diff = config['target']
-
     chain = minichain(diff)
 
     node1 = node(config['p2p_port'], config['user_port'], neighbors, chain)
