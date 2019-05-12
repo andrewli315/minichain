@@ -15,14 +15,11 @@ class CryptoUtil:
         return signature
     def verify(self, public_key, sign, data ):
         ret = False
-        try:
-            
-            load_key = VerifyingKey.from_string(public_key,curve=SECP256k1)
+        try:           
+            load_key = VerifyingKey.from_string(binascii.unhexlify(public_key),curve=SECP256k1)
             load_key.verify(binascii.unhexlify(sign), data.encode('utf-8'), hashfunc=hashlib.sha256)
-            print('success')
             ret = True
         except:
-            print("Invalid Signature")
             ret = False
         finally:
             return ret

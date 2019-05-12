@@ -1,4 +1,5 @@
 from ecdsa import SigningKey,VerifyingKey,SECP256k1
+import hashlib
 import binascii
 
 def main():
@@ -8,5 +9,6 @@ def main():
     hex_sk = binascii.hexlify(sk.to_string())
     print("pk : " + str(hex_pk,'ascii'))
     print("sk : " + str(hex_sk,'ascii'))
+
 if __name__ == '__main__':
     main()
