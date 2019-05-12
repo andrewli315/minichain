@@ -10,7 +10,7 @@ from neighbor import Neighbor
 from minichain import minichain
 
 class node:
-    def __init__(self, p2p_port, user_port, neighbors, minichain):
+    def __init__(self, p2p_port, user_port, neighbors, minichain,wallet,delay, is_miner):
         self.mutex = threading.Lock()
         self.DIR = './blocks'
         self.p2p_port = p2p_port
@@ -20,6 +20,11 @@ class node:
         self.getHeaderFlag = False
         self.prev_hash = '0'*64
         self.index = -1
+        self.wallet = wallet
+        self.delay = delay
+        self.is_miner = is_miner
+
+
     def pauseMining(self,flag):
         self.getHeaderFlag = flag
 
@@ -269,6 +274,13 @@ class node:
             else:     
                 return self.RespondTemplate(0,json.loads(result))
 
+        elif method == "getbalance":
+            target_address = request['data']['address']
+
+
+
+
+
     def handle_rpc_client(self,client_socket,addr):
         while True:
             try: 
@@ -343,20 +355,30 @@ class node:
                 if not os.path.isfile(file_name) and idx == 0 :
                     break
                 idx = idx + 1
+        # check previous tx record
+
+
 
     def start_node(self):
         print("[RUNNING]")
         self.resume()
         # start mining thread
+        
         try:
-            mining_thread = threading.Thread(target=self.mining)
-            mining_thread.start()
             # start p2p server
             p2p_server_thread = threading.Thread(target=self.listen_p2p)
             p2p_server_thread.start()
             # start rpc server
             rpc_server_thread = threading.Thread(target=self.listen_rpc)
             rpc_server_thread.start()
+
+            Thread.sleep(self.delay)
+            # start miner
+            if self.is_miner is True:
+                mining_thread = threading.Thread(target=self.mining)
+                mining_thread.start()          
+
+
         except KeyboardInterrupt:
             mining_thread._stop()
             p2p_server_thread._stop()

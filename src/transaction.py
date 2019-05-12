@@ -14,7 +14,7 @@ class   transaction:
         with open('./TxPool/'+str(self.nonce) +'.tx', 'w+') as tx:
             tx.write(self.toJson())
 
-    def toJson(self)
+    def toJsonStr(self)
         ret = {"fee" : self.fee ,
                "nonce": self.nonce,
                "sender_pub_key":self.sender_pubkey,
