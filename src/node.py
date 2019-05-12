@@ -8,7 +8,7 @@ import hashlib
 import random
 from neighbor import Neighbor
 from minichain import minichain
-
+from wallet import wallet
 class node:
     def __init__(self, p2p_port, user_port, neighbors, minichain,wallet,delay, is_miner):
         self.mutex = threading.Lock()
@@ -24,23 +24,41 @@ class node:
         self.delay = delay
         self.is_miner = is_miner
 
+    # send tx to target address
+    def send2Addr(self, target, amount):
+        # TODO
+        # figure out the solution for p2p api
+        # to send to address
+        # and how to put tx into tx pool and block
 
     def pauseMining(self,flag):
         self.getHeaderFlag = flag
 
-    def RespondTemplate(self, error, result):
-        if result == None:
-            respond={
+    def RespondTemplate(self, error, result, fmt='result'):
+        if fmt == 'result'
+            if result == None:
+                respond={
                     "error" : error
-                    }
-            return json.dumps(respond)
-        else:
-            respond = {
+                }
+                return json.dumps(respond)
+            else:
+                respond = {
                     "error" : error,
                     "result" : result
-                    }
-            return json.dumps(respond)     
-
+                }
+                return json.dumps(respond)     
+        else if fmt == 'balance':
+            if result == None:
+                respond = {
+                    "error" : error
+                }
+                return json.dumps(respond)
+            else:
+                respond = {
+                    "error" : error,
+                    "balance" : result
+                }
+                return json.dumps(respond)
     def block_is_valid(self, block_hash, block_header):
         h = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
         if h == block_hash:
@@ -276,7 +294,12 @@ class node:
 
         elif method == "getbalance":
             target_address = request['data']['address']
-
+            balance = self.wallet.getBalance()
+            return self.RespondTemplate(0,balance, fmt='balance')
+        elif method == "sendtoaddress":
+            target_addr = request['data']['address']
+            amount = request['data']['amount']
+            self.send2Addr(target_addr, amount)
 
 
 
