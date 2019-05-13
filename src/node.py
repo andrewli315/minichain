@@ -10,7 +10,7 @@ from neighbor import Neighbor
 from minichain import minichain
 from wallet import wallet
 class node:
-    def __init__(self, p2p_port, user_port, neighbors, minichain,wallet,delay, is_miner):
+    def __init__(self, p2p_port, user_port, neighbors, minichain,beneficiary, wallet, delay, is_miner):
         self.mutex = threading.Lock()
         self.DIR = './blocks'
         self.p2p_port = p2p_port
@@ -20,9 +20,11 @@ class node:
         self.getHeaderFlag = False
         self.prev_hash = '0'*64
         self.index = -1
+        self.beneficiary = beneficiary
         self.wallet = wallet
         self.delay = delay
         self.is_miner = is_miner
+        self.txpool = set()
 
     # send tx to target address
     def send2Addr(self, target, amount):
@@ -93,9 +95,10 @@ class node:
                 with self.mutex:
                     self.index = self.index + 1
                     self.minichain.insertBlock(block_header, recent_hash,self.index)
+                    # modify to sendBlock
                     self.sendHeader(block_header, recent_hash, self.minichain.getIndex())
                     self.prev_hash = recent_hash            
-
+    
     def checkHash(self,recent_hash):
         diff = str(self.minichain.getTarget()).index('1')
         prefix = recent_hash[:diff]
@@ -104,14 +107,11 @@ class node:
         else:
             return False
     
-    def sendHeader(self,block_header,block_hash, height):
+    def sendBlock(self,height,block ):
         payload = {
                 "method" : "sendHeader",
-                "data" : {
-                    "block_hash" : block_hash,
-                    "block_header" : block_header,
-                    "block_height" : height
-                    }
+                "height" : height,
+                "data" : block
                 }
         print("[SEND] " + json.dumps(payload))
 
@@ -157,10 +157,22 @@ class node:
                 return self.RespondTemplate(1,None)
             else:                
                 return self.RespondTemplate(0,result)
-        elif method == "sendHeader":            
+        elif method == "sendTransaction":
+            nonce = request['data']['nonce']
+            sender_pub_key = request['data']['sender_pub_key']
+            to = request['data']['sender_pub_key']
+            value = request['data']['value']
+            fee = request['data']['fee']
+            signature = request['data']['signature']
+            tx = Transaction(nonce,sender_pub_key, value,fee, signature)
+            tx.storeTxPool()
+            wallet.checkTxValid(tx)
+            self.txpool.add(tx)            
+
+        elif method == "sendBlock":
             print("[GET]" + json.dumps(request))
             self.pauseMining(True)
-            block_index = request['data']['block_height']
+            block_index = request['block_height']
             block_hash = request['data']['block_hash']
             block_header = request['data']['block_header']
             prev_hash = block_header[8:72]
@@ -300,9 +312,6 @@ class node:
             target_addr = request['data']['address']
             amount = request['data']['amount']
             self.send2Addr(target_addr, amount)
-
-
-
 
     def handle_rpc_client(self,client_socket,addr):
         while True:

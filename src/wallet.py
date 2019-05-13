@@ -1,3 +1,4 @@
+from CryptoUtil import CryptoUtil
 import json
 import os
 
@@ -5,9 +6,17 @@ import os
 class wallet:
     def __init__(self, public_key, private_key):
         # public key is account address
-        self.private_key = private_key
-        self.public_key = public_key
+        self.crypto_util = CryptoUtil(public_key, private_key)        
+        self.address = public_key
         self.balance = 0
+    # use myself sign the transaction from rpc client
+    def checkTxValid(self, tx):
+        ret = self.crypto_util.verify(tx.getPubKey(), tx.getSig(), tx.getData())
+        return ret
+
+    def sign(self, tx):
+        sig = self.crypto_util.sign(tx.getData())
+        return sig
 
     def update_balance(self):        
         self.balance += 1
