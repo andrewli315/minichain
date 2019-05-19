@@ -18,12 +18,12 @@ def main():
     delay = config['delay']
     is_miner = config['mining']
     public_key = config['wallet']['public_key']
-    private_key = config['wallet']['priave_key']
+    private_key = config['wallet']['private_key']
     fee = config['fee']
 
     chain = minichain(diff)
     user_wallet = wallet(public_key,private_key)
-    node1 = node(config['p2p_port'], config['user_port'], neighbors, chain, wallet)
+    node1 = node(config['p2p_port'], config['user_port'], neighbors, chain,beneficiary, wallet,fee, delay, is_miner)
     try:
         node1.start_node()
     except KeyboardInterrupt:

@@ -8,9 +8,10 @@ import hashlib
 import random
 from neighbor import Neighbor
 from minichain import minichain
+from transaction import Transaction
 from wallet import wallet
 class node:
-    def __init__(self, p2p_port, user_port, neighbors, minichain,beneficiary, wallet, delay, is_miner):
+    def __init__(self, p2p_port, user_port, neighbors, minichain,beneficiary, wallet,fee, delay, is_miner):
         self.mutex = threading.Lock()
         self.DIR = './blocks'
         self.p2p_port = p2p_port
@@ -23,21 +24,55 @@ class node:
         self.beneficiary = beneficiary
         self.wallet = wallet
         self.delay = delay
+        self.fee = fee
+        self.tx_nonce = 0
         self.is_miner = is_miner
+        self.block_hash_pool = set()
+        # json object set
         self.txpool = set()
 
     # send tx to target address
     def send2Addr(self, target, amount):
+        self.tx_nonce += 1
+        data = {
+                "nonce" : self.tx_nonce,
+                "sender_pub_key" : self.wallet.getPublicKey(),
+                "to" : target,
+                "value" : amount,
+                "fee" : self.fee,
+                "signature" : ''
+                }
+        tx = Transaction(tx)
+        sig = self.wallet.sign(tx)
+        tx.setSignature(sig)
+        ret = tx.toJson()
+        self.txpool.add(ret)
         # TODO
-        # figure out the solution for p2p api
-        # to send to address
-        # and how to put tx into tx pool and block
+        # call sendTransaction api
+        payload = {
+                "method" : "sendTransaction",
+                "data" : ret
+                }
+        print(payload)
+        for neighbor in self.neighbors:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
+                client.send(json.dumps(payload).encode('utf-8'))
+                result = client.recv(2048)
+                respond = json.loads(result.decode('utf-8'))
+                if respond['error'] == 1:
+                    print("[ERROR] INTERNAL ERROR")
+                client.close()
+            except socket.error:
+                pass       
+
 
     def pauseMining(self,flag):
         self.getHeaderFlag = flag
 
     def RespondTemplate(self, error, result, fmt='result'):
-        if fmt == 'result'
+        if fmt == 'result':
             if result == None:
                 respond={
                     "error" : error
@@ -49,7 +84,7 @@ class node:
                     "result" : result
                 }
                 return json.dumps(respond)     
-        else if fmt == 'balance':
+        elif fmt == 'balance':
             if result == None:
                 respond = {
                     "error" : error
@@ -61,42 +96,101 @@ class node:
                     "balance" : result
                 }
                 return json.dumps(respond)
-    def block_is_valid(self, block_hash, block_header):
-        h = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
-        if h == block_hash:
-            return True
+    def block_is_valid(self,version, prev_hash, tx_hash,beneficiary, target, nonce, txs, block_hash):
+        valid_hash = False
+        valid_txs = False
+        if version != 2:
+           return False
+        if target != self.minichain.getTarget():
+            return False
+        if tx_hash != calculate_tx_hash(txs):
+            return  False
+        if self.checkHash(block_hash):
+            valid_hash =  True            
+        if self.check_valid_tx(self,txs, tx_hash):
+            valid_txs = False
+        return (valid_hash and valid_txs )
+
+#check transaction if it appears in previous block,
+#the signature is valid and 
+#the account's balance is enough for fee and value.
+
+    def check_tx_sig(self, tx):
+        transaction = Transaction(tx)
+        ret = self.wallet.checkTxSig(tx)
+        return True 
+#    this function only for node to 
+#    judge if the txpool has valid tx
+#    if there is a valid tx then insert it into block
+    def check_valid_txs(self): 
+        valid_tx = set()
+        if not self.txpool:
+            return None
+        for tx in self.txpool:
+            balance = self.minichain.getBalanceOf(tx['sender_pub_key'])            
+            fee = tx['fee'] + tx['value'] 
+            if self.check_valid_tx(tx) and not self.minichain.tx_is_exist(tx) and balance >= fee:
+                valid_tx.add(tx)
+        return valid_tx
+    
+    def calculate_tx_hash(self,txs):
+        tx_signs = ''
+        if txs is None:
+            ret = hashlib.sha256(''.encode('utf-8')).hexdigest()
         else:
-            return False   
+            for tx in txs:
+                tx_signs += tx['signature']
+            ret = hashlib.sha256(tx_signs.encode('utf-8')).hexdigest()
+        return ret
     """
         using proof of work as the consensus algorithm
         h = sha256()
         input = 
-            version + prev_hash + merkle_root + target + nonce
+            version + prev_hash + tx_hash  + target + nonce + beneficiary
         result = sha256(input)
     """
     def mining(self):
         print('[MINING]')
         diff = self.minichain.getDifficult()
-        version = self.minichain.getVersion()
+        version = str(self.minichain.getVersion()).rjust(8,'0')
         self.prev_hash = self.minichain.getPrevHash()
-        merkle_root = self.minichain.getMerkleRoot()
+        tx_hash = self.minichain.getTxHash()
         target = self.minichain.getTarget()
         while True:
             if self.getHeaderFlag:
                 self.prev_hash = self.minichain.getBlockHash()
                 continue                                    
             rand_num = hex(random.randint(0,4294967295))[2:]
+
+            add2block = set()
+            # add tx into block from txpool
+            for tx in self.txpool:
+                if self.txInBlock(tx) == False:
+                    add2block.add(tx)
+            tx_nonce = 0
+            for tx in add2block:
+                # calculate the tx_hash
+                tx_nonce += 1
+                
             # using rand to calculate nonce
-            nonce = '0'*(8-len(rand_num)) + rand_num            
-            block_header = version + self.prev_hash + merkle_root + target + nonce
+            nonce = '0'*(8-len(rand_num)) + rand_num
+
+            valid_tx = self.check_valid_txs()
+            tx_hash = self.calculate_tx_hash(valid_tx)
+            block_header = version + self.prev_hash + tx_hash + target + nonce + self.beneficiary
             recent_hash = hashlib.sha256((block_header.encode('utf-8'))).hexdigest()
+
             # using mutex to avoid race condition            
             if self.checkHash(recent_hash):                      
                 with self.mutex:
                     self.index = self.index + 1
-                    self.minichain.insertBlock(block_header, recent_hash,self.index)
-                    # modify to sendBlock
-                    self.sendHeader(block_header, recent_hash, self.minichain.getIndex())
+                    self.minichain.insertBlock(self.index, self.prev_hash,
+                            tx_hash, self.beneficiary, self.minichain.getTarget(), nonce,
+                            valid_tx, recent_hash)
+                    
+                    #  sendBlock
+                    data = self.minichain.getBlockJson(recent_hash)
+                    self.sendBlock(self.index, data)
                     self.prev_hash = recent_hash            
     
     def checkHash(self,recent_hash):
@@ -158,53 +252,43 @@ class node:
             else:                
                 return self.RespondTemplate(0,result)
         elif method == "sendTransaction":
-            nonce = request['data']['nonce']
-            sender_pub_key = request['data']['sender_pub_key']
-            to = request['data']['sender_pub_key']
-            value = request['data']['value']
-            fee = request['data']['fee']
-            signature = request['data']['signature']
-            tx = Transaction(nonce,sender_pub_key, value,fee, signature)
-            tx.storeTxPool()
-            wallet.checkTxValid(tx)
-            self.txpool.add(tx)            
+            data = request['data']
+            print(data)
+            tx = Transaction(data)
+            if wallet.checkTxSig(tx):
+                tx.storeTxPool()
+                self.txpool.add(tx.toJson())
 
         elif method == "sendBlock":
             print("[GET]" + json.dumps(request))
             self.pauseMining(True)
-            block_index = request['block_height']
-            block_hash = request['data']['block_hash']
-            block_header = request['data']['block_header']
-            prev_hash = block_header[8:72]
-            current_hash = self.minichain.getBlockHash()
-            if self.block_is_valid(block_hash,block_header) == True:                
-                if self.prev_hash == prev_hash:
-                    # prevent block overlapping and race condition
-                    if self.index == block_index:
-                        print("[WARNING] MINE THE SAME BLOCK")
-                        self.pauseMining(False)
-                        # abort this block
-                        return self.RespondTemplate(1,None)
-                    # the blockchain is latest in previous block
-                    elif self.index == (block_index-1):
-                        with self.mutex:
-                            self.index = block_index
-                            self.minichain.insertBlock(block_header,block_hash, self.index)
-                            self.prev_hash = block_hash
-                        self.pauseMining(False)
-                        return self.RespondTemplate(0,None)
-                    else:
-                        return self.RespondTemplate(1,None)
-                else:
-                    if block_index > self.index:                    
-                        self.check_fork('0'*64, block_hash, block_index)
-                        self.pauseMining(False)
-                    else:
-                        print("[WARNING] THIS CHAIN IS LONGER")
-                        self.pauseMining(False)                    
-                        return self.RespondTemplate(1,None)
+            height = request['height']
+            version = request['data']['version']
+            prev_hash = request['data']['prev_hash']
+            tx_hash = request['data']['transactions_hash']
+            beneficiary = request['data']['beneficiary']
+            target = request['data']['target']
+            nonce = request['data']['nonce']
+            txs = request['data']['transactions']
+            
+            block_header = ''
+            block_header += str(version).rjust(8,'0')
+            block_header += prev_hash
+            block_header += tx_hash
+            block_header += beneficiary
+            block_header += target
+            block_header += nonce
+            block_hash = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
+            
+            if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs) == True:
+                self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs)
+                for tx in txs:
+                    transaction = Transaction(tx)
+                    transaction.storeTxPool()
+                    self.txpool.add(tx)
+                self.pauseMining(False)
             else:
-                print("[ERROR] INVALID HASH")
+                print("[ERROR] INVALID Block")
                 self.pauseMining(False)      
                 # hash invalid error
                 return self.RespondTemplate(1,None)
@@ -345,6 +429,9 @@ class node:
                     traceback.print_exc()
             s.close()
 
+
+#this version would not use this function
+
     def resume(self):
         if os.path.isdir(self.DIR):
             print("[CHECKING]")
@@ -393,7 +480,7 @@ class node:
 
     def start_node(self):
         print("[RUNNING]")
-        self.resume()
+        #self.resume()
         # start mining thread
         
         try:
@@ -404,7 +491,9 @@ class node:
             rpc_server_thread = threading.Thread(target=self.listen_rpc)
             rpc_server_thread.start()
 
-            Thread.sleep(self.delay)
+            print(self.delay)
+            time.sleep(self.delay)
+            print('delay finish')
             # start miner
             if self.is_miner is True:
                 mining_thread = threading.Thread(target=self.mining)
