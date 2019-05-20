@@ -1,4 +1,5 @@
 __pycache__/
 blocks/
-config.json
+TxPool/
+./config.json
 
