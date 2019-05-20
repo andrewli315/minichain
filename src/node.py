@@ -198,7 +198,7 @@ class node:
     
     def sendBlock(self,height,block ):
         payload = {
-                "method" : "sendHeader",
+                "method" : "sendBlock",
                 "height" : height,
                 "data" : block
                 }
@@ -211,10 +211,12 @@ class node:
                 client.send(json.dumps(payload).encode('utf-8'))
                 result = client.recv(2048)
                 respond = json.loads(result.decode('utf-8'))
+                print(respond)
                 if respond['error'] == 1:
                     print("[ERROR] INTERNAL ERROR")
                 client.close()
             except socket.error:
+                print('test')
                 pass       
          
     def getBlocks(self, count, hash_begin, hash_stop,client):
@@ -237,6 +239,7 @@ class node:
 
     def process_p2p_request(self, request): 
         method = request['method']
+        print(method)
         if method == "getBlocks":
             count = request['data']['hash_count']
             hash_begin = request['data']['hash_begin']
@@ -281,6 +284,7 @@ class node:
                     transaction.storeTxPool()
                     self.txpool.add(tx)
                 self.pauseMining(False)
+                return self.RespondTemplate(0,None)
             else:
                 print("[ERROR] INVALID Block")
                 self.pauseMining(False)      
