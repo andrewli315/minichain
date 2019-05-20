@@ -262,7 +262,7 @@ class node:
             self.pauseMining(True)
             height = request['height']
             version = block['version']
-            prev_hash = block['prev_hash']
+            prev_hash = block['prev_block']
             tx_hash = block['transactions_hash']
             beneficiary = block['beneficiary']
             target = block['target']
