@@ -278,7 +278,7 @@ class node:
             block_header += nonce
             block_hash = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
             
-            if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs) == True:
+            if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs,block_hash) == True:
                 self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs)
                 if txs is not None:
                     for tx in txs:
