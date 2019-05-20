@@ -257,16 +257,17 @@ class node:
                 self.txpool.add(tx.toJson())
 
         elif method == "sendBlock":
-            print("[GET]" + json.dumps(request))
+            print("[GET]" + request)
+            block = json.loads(request['data'])
             self.pauseMining(True)
             height = request['height']
-            version = request['data']['version']
-            prev_hash = request['data']['prev_hash']
-            tx_hash = request['data']['transactions_hash']
-            beneficiary = request['data']['beneficiary']
-            target = request['data']['target']
-            nonce = request['data']['nonce']
-            txs = request['data']['transactions']
+            version = block['version']
+            prev_hash = block['prev_hash']
+            tx_hash = block['transactions_hash']
+            beneficiary = block['beneficiary']
+            target = block['target']
+            nonce = block['nonce']
+            txs = block['transactions']
             
             block_header = ''
             block_header += str(version).rjust(8,'0')
@@ -279,10 +280,11 @@ class node:
             
             if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs) == True:
                 self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs)
-                for tx in txs:
-                    transaction = Transaction(tx)
-                    transaction.storeTxPool()
-                    self.txpool.add(tx)
+                if txs is not None:
+                    for tx in txs:
+                        transaction = Transaction(tx)
+                        transaction.storeTxPool()
+                        self.txpool.add(tx)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
             else:
@@ -292,7 +294,7 @@ class node:
                 return self.RespondTemplate(1,None)
             self.pauseMining(False)      
         # unknown method error      
-        return self.RespondTemplate(2,None)
+        return self.RespondTemplate(1,None)
 
     def getMaxFork(self, max_chain):
         idx = 0                
