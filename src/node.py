@@ -10,6 +10,7 @@ from neighbor import Neighbor
 from minichain import minichain
 from transaction import Transaction
 from wallet import wallet
+
 class node:
     def __init__(self, p2p_port, user_port, neighbors, minichain,beneficiary, wallet,fee, delay, is_miner):
         self.mutex = threading.Lock()
@@ -36,24 +37,28 @@ class node:
         self.tx_nonce += 1
         data = {
                 "nonce" : self.tx_nonce,
-                "sender_pub_key" : self.wallet.getPublicKey(),
+                "sender_pub_key" : self.wallet.getPubKey(),
                 "to" : target,
                 "value" : amount,
                 "fee" : self.fee,
                 "signature" : ''
                 }
-        tx = Transaction(tx)
+        tx = Transaction(data)
         sig = self.wallet.sign(tx)
         tx.setSignature(sig)
+        self.pauseMining(True)
+        with self.mutex:
+            ret_str = tx.toJsonStr()
+            self.txpool.add(ret_str)
+        self.pauseMining(False)
         ret = tx.toJson()
-        self.txpool.add(ret)
+        tx.storeTxPool()
         # TODO
         # call sendTransaction api
         payload = {
                 "method" : "sendTransaction",
                 "data" : ret
                 }
-        print(payload)
         for neighbor in self.neighbors:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
@@ -66,7 +71,7 @@ class node:
                 client.close()
             except socket.error:
                 pass       
-
+        return self.RespondTemplate(0,None)
 
     def pauseMining(self,flag):
         self.getHeaderFlag = flag
@@ -117,7 +122,7 @@ class node:
 
     def check_tx_sig(self, tx):
         transaction = Transaction(tx)
-        ret = self.wallet.checkTxSig(tx)
+        ret = self.wallet.checkTxSig(transaction)
         return True 
 #    this function only for node to 
 #    judge if the txpool has valid tx
@@ -126,11 +131,12 @@ class node:
         valid_tx = set()
         if not self.txpool:
             return None
-        for tx in self.txpool:
-            balance = self.minichain.getBalanceOf(tx['sender_pub_key'])            
+        for tx_str in self.txpool:
+            tx = json.loads(tx_str)
+            balance = self.minichain.getBalanceOf(tx['sender_pub_key'])
             fee = tx['fee'] + tx['value'] 
-            if self.check_valid_tx(tx) and not self.minichain.tx_is_exist(tx) and balance >= fee:
-                valid_tx.add(tx)
+            if self.check_tx_sig(tx) and not self.minichain.tx_is_exist(tx['signature']) and balance >= fee:
+                valid_tx.add(tx_str)
         return valid_tx
     
     def calculate_tx_hash(self,txs):
@@ -138,7 +144,8 @@ class node:
         if txs is None:
             ret = hashlib.sha256(''.encode('utf-8')).hexdigest()
         else:
-            for tx in txs:
+            for tx_str in txs:
+                tx = json.loads(tx_str)
                 tx_signs += tx['signature']
             ret = hashlib.sha256(tx_signs.encode('utf-8')).hexdigest()
         return ret
@@ -159,34 +166,22 @@ class node:
         while True:
             if self.getHeaderFlag:
                 self.prev_hash = self.minichain.getBlockHash()
-                continue                                    
-            rand_num = hex(random.randint(0,4294967295))[2:]
-
-            add2block = set()
-            # add tx into block from txpool
-            for tx in self.txpool:
-                if self.txInBlock(tx) == False:
-                    add2block.add(tx)
-            tx_nonce = 0
-            for tx in add2block:
-                # calculate the tx_hash
-                tx_nonce += 1
-                
+                continue                                                    
             # using rand to calculate nonce
-            nonce = '0'*(8-len(rand_num)) + rand_num
-
-            valid_tx = self.check_valid_txs()
-            tx_hash = self.calculate_tx_hash(valid_tx)
-            block_header = version + self.prev_hash + tx_hash + target + nonce + self.beneficiary
-            recent_hash = hashlib.sha256((block_header.encode('utf-8'))).hexdigest()
-
-            # using mutex to avoid race condition            
-            if self.checkHash(recent_hash):                      
-                with self.mutex:
+            
+            with self.mutex:
+                rand_num = hex(random.randint(0,4294967295))[2:]
+                nonce = '0'*(8-len(rand_num)) + rand_num
+                valid_txs = self.check_valid_txs()                
+                tx_hash = self.calculate_tx_hash(valid_txs)
+                block_header = version + self.prev_hash + tx_hash + target + nonce + self.beneficiary
+                recent_hash = hashlib.sha256((block_header.encode('utf-8'))).hexdigest()
+                # using mutex to avoid race condition            
+                if self.checkHash(recent_hash):                      
                     self.index = self.index + 1
                     self.minichain.insertBlock(self.index, self.prev_hash,
                             tx_hash, self.beneficiary, self.minichain.getTarget(), nonce,
-                            valid_tx, recent_hash)
+                            valid_txs, recent_hash)
                     
                     #  sendBlock
                     data = self.minichain.getBlockJson(recent_hash)
@@ -253,7 +248,6 @@ class node:
                 return self.RespondTemplate(0,result)
         elif method == "sendTransaction":
             data = request['data']
-            print(data)
             tx = Transaction(data)
             if wallet.checkTxSig(tx):
                 tx.storeTxPool()
@@ -390,12 +384,13 @@ class node:
 
         elif method == "getbalance":
             target_address = request['data']['address']
-            balance = self.wallet.getBalance()
+            balance = self.minichain.getBalanceOf(target_address)
             return self.RespondTemplate(0,balance, fmt='balance')
         elif method == "sendtoaddress":
             target_addr = request['data']['address']
             amount = request['data']['amount']
-            self.send2Addr(target_addr, amount)
+            ret = self.send2Addr(target_addr, amount)
+            return ret 
 
     def handle_rpc_client(self,client_socket,addr):
         while True:
@@ -405,7 +400,7 @@ class node:
                     req = data.decode('utf-8')                    
                     request = json.loads(req)
                     respond = self.process_rpc_request(request)
-                    client_socket.send(json.dumps(respond).encode('utf-8'))                    
+                    client_socket.send(respond.encode('utf-8'))   
                 else:
                     break
             except:
@@ -448,7 +443,6 @@ class node:
                     with open(file_name, 'r') as f:
                         
                         block = json.load(f)
-                        print(json.dumps(block))
                         self.minichain.updateBlock(block,idx)
                     self.index = idx
                     break

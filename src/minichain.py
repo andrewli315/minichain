@@ -18,7 +18,6 @@ class minichain:
         self.prev_hash = '0'*64
         self.tx_hash = '0000000000000000000000000000000000000000000000000000000000000000'        
         self.version = 2
-        self.txs = None
         self.beneficiary = ''
         self.nonce = '00000000'
         self.block_hash_pool = set()
@@ -30,23 +29,24 @@ class minichain:
             file_name = self.DIR + '/' + block_hash + '.json'
             with open(file_name,'r') as data:
                 block = json.load(data)
-            for tx in block['transactions']:
-                if tx['signature'] == tx_sig:
-                    ret = True
-                    return ret
-            block_hash = block['prev_hash']
+            if block['transactions'] is not None:
+                for tx in block['transactions']:                   
+                    if tx['signature'] == tx_sig:
+                        ret = True
+                        return ret
+            block_hash = block['prev_block']
         return ret
     def findMaxFork(self):
         max_height = -1
         fork_hash = ''
         for block_hash in self.block_hash_pool:
-            file_name = self.DIR + '/' + block_hash + '.json'            
+            file_name = self.DIR + '/' + block_hash + '.json'
             with open(file_name, 'r') as data:
                 block = json.load(data)
-            if max_height < block['hight']:
-                max_height = block['hight']
-                for_hash = block_hash
-        return max_height,for_hash
+            if max_height < block['height']:
+                max_height = block['height']
+                fork_hash = block_hash
+        return max_height,fork_hash
     """
         when confirmation >= 3, the block could be 
         regarded as credible and immutable.
@@ -59,23 +59,23 @@ class minichain:
         balance = 0
         confirmation = 1
         for i in range(0,height+1):
+            file_name = self.DIR + '/' + block_hash + '.json'
+            with open(file_name,'r') as data:
+                block = json.load(data)
             if confirmation >= 3:
-                file_name = self.DIR + '/' + block_hash + '.json'
-                with open(file_name,'r') as data:
-                    block = json.load(data)
                 beneficiary = block['beneficiary']
                 if beneficiary == address:
                     balance += 1000
                 txs = block['transactions']
-                for tx in txs:
-                    balance += tx['fee']
-                    if tx['to'] == address:
-                        balance += tx['value']
-                    elif tx['sender_pub_key'] == address:
-                        balance -= tx['value']
-
+                if txs is not None:                    
+                    for tx in txs:
+                        balance += tx['fee']
+                        if tx['to'] == address:
+                            balance += tx['value']
+                        elif tx['sender_pub_key'] == address:
+                            balance -= tx['value']
             confirmation += 1
-            block_hash = block['prev_hash']
+            block_hash = block['prev_block']
         return balance
     # for insert the latest block
     def getBlockJson(self,block_hash):
@@ -94,6 +94,13 @@ class minichain:
             return json.dumps(ret)
 
     def insertBlock(self, height,prev_hash,tx_hash,beneficiary, target, nonce, txs, block_hash):
+        print(block_hash)
+        if txs != None:
+            valid_txs = []
+            for tx in txs:
+                valid_txs.append(json.loads(tx))
+        else:
+            valid_txs = []
         try:
             if self.current_hash == prev_hash and self.index == (height - 1):
                 self.index = height
@@ -103,9 +110,7 @@ class minichain:
                 self.tx_hash = tx_hash            
                 self.target = target
                 self.nonce = nonce
-                self.beneficiary = beneficiary
-                self.txs = txs
-
+                self.beneficiary = beneficiary                
             block = {
                         "version" : self.version,
                         "height" : height,
@@ -114,10 +119,10 @@ class minichain:
                         "beneficiary" : beneficiary,
                         "target" : target,
                         "nonce" : nonce,
-                        "transactions" : txs
+                        "transactions" : valid_txs
                     }
             self.block_hash_pool.add(block_hash)
-            print(self.current_hash)
+            print(block)
             file_name = self.DIR + '/' + str(block_hash) + '.json'
             with open(file_name , 'w+') as f:
                 f.write(json.dumps(block))

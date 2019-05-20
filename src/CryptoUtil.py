@@ -12,7 +12,10 @@ class CryptoUtil:
         print("pk : " + str(binascii.hexlify(self.public_key.to_string())))
     def sign(self, data):
         signature = binascii.hexlify(self.private_key.sign(data.encode('utf-8'), hashfunc=hashlib.sha256))
+        #sig  = self.private_key.sign(data.encode('utf-8'), hashfunc=hashlib.sha256)
+        #signature = binascii.hexlify(sig)
         return signature
+
     def verify(self, public_key, sign, data ):
         ret = False
         try:           
