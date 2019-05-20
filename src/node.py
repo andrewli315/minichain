@@ -108,8 +108,8 @@ class node:
            return False
         if target != self.minichain.getTarget():
             return False
-        if tx_hash != calculate_tx_hash(txs):
-            return  False
+        if tx_hash != self.calculate_tx_hash(txs):
+            return False
         if self.checkHash(block_hash):
             valid_hash =  True            
         if self.check_valid_tx(self,txs, tx_hash):
