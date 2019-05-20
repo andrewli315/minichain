@@ -257,7 +257,7 @@ class node:
                 self.txpool.add(tx.toJson())
 
         elif method == "sendBlock":
-            print("[GET]" + request)
+            print("[GET]" + json.dumps(request))
             block = json.loads(request['data'])
             self.pauseMining(True)
             height = request['height']
