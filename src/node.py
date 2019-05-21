@@ -102,18 +102,17 @@ class node:
                 return json.dumps(respond)
     def block_is_valid(self,version, prev_hash, tx_hash,beneficiary, target, nonce, txs, block_hash):
         valid_hash = False
-        valid_txs = False
+        valid = False
         if version != 2:
            return False
         if target != self.minichain.getTarget():
             return False
         if tx_hash != self.calculate_tx_hash(txs):
             return False
-        if self.checkHash(block_hash):
+        if self.checkHashTarget(block_hash):
             valid_hash =  True            
-        if self.check_txs_in_block(txs):
-            valid_txs = False
-        return (valid_hash and valid_txs )
+        valid_txs, valid = self.check_valid_txs(txs):
+        return (valid_hash and valid )
 
             
 #check transaction if it appears in previous block,
@@ -181,7 +180,7 @@ class node:
                 block_header = version + self.prev_hash + tx_hash + target + nonce + self.beneficiary
                 recent_hash = hashlib.sha256((block_header.encode('utf-8'))).hexdigest()
                 # using mutex to avoid race condition            
-                if self.checkHash(recent_hash):                      
+                if self.checkHashTarget(recent_hash):                      
                     self.index = self.index + 1
                     self.minichain.insertBlock(self.index, self.prev_hash,
                             tx_hash, self.beneficiary, self.minichain.getTarget(), nonce,
@@ -192,7 +191,7 @@ class node:
                     self.sendBlock(self.index, data)
                     self.prev_hash = recent_hash            
     
-    def checkHash(self,recent_hash):
+    def checkHashTarget(self,recent_hash):
         diff = str(self.minichain.getTarget()).index('1')
         prefix = recent_hash[:diff]
         if prefix == '0'*diff:
