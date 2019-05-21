@@ -292,7 +292,7 @@ class node:
             block_hash = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
 
             self.index = height
-            self.prev_hash = prev_hash
+            self.prev_hash = block_hash
             txs_dict = set()
             for tx in txs:
                txs_dict.add(json.dumps(tx)) 
