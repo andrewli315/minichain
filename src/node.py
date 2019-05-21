@@ -13,7 +13,7 @@ from wallet import wallet
 
 class node:
     def __init__(self, p2p_port, user_port, neighbors, minichain,beneficiary, wallet,fee, delay, is_miner):
-        self.mutex = threading.Lock()
+        self.mutex = threading.Lock()       
         self.DIR = './blocks'
         self.p2p_port = p2p_port
         self.user_port = user_port
@@ -252,9 +252,9 @@ class node:
         elif method == "sendTransaction":
             data = request['data']
             tx = Transaction(data)
-            if wallet.checkTxSig(tx):
+            if self.wallet.checkTxSig(tx):
                 tx.storeTxPool()
-                self.txpool.add(tx.toJson())
+                self.txpool.add(tx.toJsonStr())
 
         elif method == "sendBlock":
             print("[GET]" + json.dumps(request))
@@ -281,7 +281,8 @@ class node:
             self.index = height
             self.prev_hash = prev_hash
             if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs,block_hash) == True:
-                self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs, block_hash)
+                with self.mutex:
+                    self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs, block_hash)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
             else:
