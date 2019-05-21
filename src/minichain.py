@@ -81,6 +81,8 @@ class minichain:
                             balance -= tx['value']
             confirmation += 1
             block_hash = block['prev_block']
+            if block_hash == '0'*64:
+                break
         return balance
     # for insert the latest block
     def getBlockJson(self,block_hash):

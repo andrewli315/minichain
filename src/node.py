@@ -58,7 +58,6 @@ class node:
                 "method" : "sendTransaction",
                 "data" : ret
                 }
-        print(payload)
         for neighbor in self.neighbors:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
@@ -110,7 +109,6 @@ class node:
         if target != self.minichain.getTarget():
             return False
         if tx_hash != self.calculate_tx_hash(txs):
-            print('tx_hash is invalid')
             return False
         valid_hash = self.checkHashTarget(block_hash)
         valid_txs, valid = self.check_valid_txs(txs)
@@ -133,18 +131,16 @@ class node:
     def check_valid_txs(self, txs): 
         valid_tx = set()
         valid = True
-        if not txs :
+        if txs is None:         
             return None,True
         for tx_str in txs:
             tx = json.loads(tx_str)
             balance = self.minichain.getBalanceOf(tx['sender_pub_key'])
             fee = tx['fee'] + tx['value'] 
             if self.check_tx_sig(tx) and not self.minichain.tx_is_exist(tx['signature']) and balance >= fee:
-                print(tx_str)
                 valid_tx.add(tx_str)
             else:
                 valid = False
-                print('tx is exist or balance is not enough or tx sig is invalid')
         return valid_tx,valid
     
     def calculate_tx_hash(self,txs):
@@ -153,8 +149,6 @@ class node:
             ret = hashlib.sha256(''.encode('utf-8')).hexdigest()
         else:
             for tx_str in txs:
-                print(type(tx_str))
-                print(tx_str)
                 tx = json.loads(tx_str)
                 tx_signs += tx['signature']
             ret = hashlib.sha256(tx_signs.encode('utf-8')).hexdigest()
@@ -182,6 +176,8 @@ class node:
             with self.mutex:
                 rand_num = hex(random.randint(0,4294967295))[2:]
                 nonce = '0'*(8-len(rand_num)) + rand_num
+                self.index, self.prev_hash = self.minichain.findMaxFork()
+
                 if self.alreadyInValidTx == False:
                     valid_txs, valid = self.check_valid_txs(self.txpool)
                     tx_hash = self.calculate_tx_hash(valid_txs)
@@ -189,7 +185,7 @@ class node:
 
                 block_header = version + self.prev_hash + tx_hash + target + nonce + self.beneficiary
                 recent_hash = hashlib.sha256((block_header.encode('utf-8'))).hexdigest()
-                # using mutex to avoid race condition            
+                # using mutex to avoid race condition   
                 if self.checkHashTarget(recent_hash):                      
                     self.index = self.index + 1
                     self.minichain.insertBlock(self.index, self.prev_hash,
@@ -307,7 +303,7 @@ class node:
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
             else:
-                print("[ERROR] INVALID Block")
+                
                 self.pauseMining(False)      
                 # hash invalid error
                 return self.RespondTemplate(1,None)

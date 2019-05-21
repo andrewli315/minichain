@@ -1,13 +1,13 @@
 {
     "mining" : true,
     "delay" : 1,    
-    "p2p_port": 2222,
-    "user_port": 2223,
+    "p2p_port": 4443,
+    "user_port": 4444,
     "neighbor_list" : [
         {
             "ip": "127.0.0.1",
-            "p2p_port": 4443,
-            "user_port": 4444
+            "p2p_port": 2222,
+            "user_port": 2223
         },
 		{
 			"ip" : "127.0.0.1",
@@ -15,10 +15,10 @@
 			"user_port" : 3334
 		}
     ],
-    "beneficiary" : "c616463ef6d433438ad26d958d4380311cae69b8603bffbec7f09e764f0d656685852f349cad97858c22849d294e39d7dc20fda56a60e16be6c4cce8f1b7d1bc",
+    "beneficiary" : "0d668c1ac2b55a28107e64460b1844142b9231c203864f88015bbc79e283b2a026a56e31d8b670bedfb04266f9d5ea3582584747db006375d24d1ee6546f61ff",
     "wallet" : {
-        "public_key" : "9357c3b49d66e79c4edba6d81b9e58c47409ad6b38d0c396bd40e9909ea556db9ef3d676745e46d15ee18362981d72fbdbb56bc8975db5546083f37e993900f3",
-        "private_key" : "253b55b1e91241e308ea7ff7a6e5770b3edcacbc963c79081a8cb33d3bdf21c6"
+        "public_key" : "0d668c1ac2b55a28107e64460b1844142b9231c203864f88015bbc79e283b2a026a56e31d8b670bedfb04266f9d5ea3582584747db006375d24d1ee6546f61ff",
+        "private_key" : "3dbf2059ae114e52e2428508ac3ae255537c70ea9096922718b3e9db4ec1e1f1"
     },
     "fee": 3,    
     "target" : "0000010000000000000000000000000000000000000000000000000000000000"
