@@ -50,7 +50,6 @@ class Transaction:
                "to" : self.to,
                "value" : self.value
                 }
-        print(ret)
         return json.dumps(ret)
     def toJson(self):
         ret = {

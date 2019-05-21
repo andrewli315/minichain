@@ -28,7 +28,6 @@ class node:
         self.fee = fee
         self.tx_nonce = 0
         self.is_miner = is_miner
-        self.block_hash_pool = set()
         # json object set
         self.txpool = set()
 
@@ -112,10 +111,11 @@ class node:
             return False
         if self.checkHash(block_hash):
             valid_hash =  True            
-        if self.check_valid_tx(self,txs, tx_hash):
+        if self.check_txs_in_block(txs):
             valid_txs = False
         return (valid_hash and valid_txs )
 
+            
 #check transaction if it appears in previous block,
 #the signature is valid and 
 #the account's balance is enough for fee and value.
@@ -127,17 +127,21 @@ class node:
 #    this function only for node to 
 #    judge if the txpool has valid tx
 #    if there is a valid tx then insert it into block
-    def check_valid_txs(self): 
+    def check_valid_txs(self, txs): 
         valid_tx = set()
+        valid = True
         if not self.txpool:
             return None
-        for tx_str in self.txpool:
+        for tx_str in txs:
             tx = json.loads(tx_str)
             balance = self.minichain.getBalanceOf(tx['sender_pub_key'])
             fee = tx['fee'] + tx['value'] 
             if self.check_tx_sig(tx) and not self.minichain.tx_is_exist(tx['signature']) and balance >= fee:
                 valid_tx.add(tx_str)
-        return valid_tx
+            else:
+                valid = False
+        
+        return valid_tx,valid
     
     def calculate_tx_hash(self,txs):
         tx_signs = ''
@@ -172,7 +176,7 @@ class node:
             with self.mutex:
                 rand_num = hex(random.randint(0,4294967295))[2:]
                 nonce = '0'*(8-len(rand_num)) + rand_num
-                valid_txs = self.check_valid_txs()                
+                valid_txs = self.check_valid_txs(self.txpool)
                 tx_hash = self.calculate_tx_hash(valid_txs)
                 block_header = version + self.prev_hash + tx_hash + target + nonce + self.beneficiary
                 recent_hash = hashlib.sha256((block_header.encode('utf-8'))).hexdigest()
@@ -216,7 +220,6 @@ class node:
                     print("[ERROR] INTERNAL ERROR")
                 client.close()
             except socket.error:
-                print('test')
                 pass       
          
     def getBlocks(self, count, hash_begin, hash_stop,client):
@@ -239,7 +242,6 @@ class node:
 
     def process_p2p_request(self, request): 
         method = request['method']
-        print(method)
         if method == "getBlocks":
             count = request['data']['hash_count']
             hash_begin = request['data']['hash_begin']
@@ -279,12 +281,12 @@ class node:
             block_hash = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
             
             if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs,block_hash) == True:
-                self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs)
                 if txs is not None:
-                    for tx in txs:
-                        transaction = Transaction(tx)
-                        transaction.storeTxPool()
-                        self.txpool.add(tx)
+                    valid_tx, valid = self.check_valid_txs(txs)
+                    if valid == False:
+                        self.pauseMining(False)
+                        return self.RespondTemplate(1,None)                
+                self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
             else:

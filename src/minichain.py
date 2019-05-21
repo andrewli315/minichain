@@ -46,6 +46,11 @@ class minichain:
             if max_height < block['height']:
                 max_height = block['height']
                 fork_hash = block_hash
+        
+        self.current_hash = fork_hash
+        self.index = max_height
+
+
         return max_height,fork_hash
     """
         when confirmation >= 3, the block could be 
@@ -94,7 +99,6 @@ class minichain:
             return json.dumps(ret)
 
     def insertBlock(self, height,prev_hash,tx_hash,beneficiary, target, nonce, txs, block_hash):
-        print(block_hash)
         if txs != None:
             valid_txs = []
             for tx in txs:
@@ -102,7 +106,7 @@ class minichain:
         else:
             valid_txs = []
         try:
-            if self.current_hash == prev_hash and self.index == (height - 1):
+            if self.current_hash == prev_hash or self.index < height :
                 self.index = height
                 self.current_hash = block_hash
                 # construct block header
@@ -110,7 +114,7 @@ class minichain:
                 self.tx_hash = tx_hash            
                 self.target = target
                 self.nonce = nonce
-                self.beneficiary = beneficiary                
+                self.beneficiary = beneficiary 
             block = {
                         "version" : self.version,
                         "height" : height,
@@ -122,7 +126,6 @@ class minichain:
                         "transactions" : valid_txs
                     }
             self.block_hash_pool.add(block_hash)
-            print(block)
             file_name = self.DIR + '/' + str(block_hash) + '.json'
             with open(file_name , 'w+') as f:
                 f.write(json.dumps(block))
