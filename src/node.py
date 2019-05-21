@@ -129,8 +129,8 @@ class node:
     def check_valid_txs(self, txs): 
         valid_tx = set()
         valid = True
-        if not self.txpool:
-            return None
+        if txs is None:
+            return None,True
         for tx_str in txs:
             tx = json.loads(tx_str)
             balance = self.minichain.getBalanceOf(tx['sender_pub_key'])
