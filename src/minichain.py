@@ -115,7 +115,6 @@ class minichain:
                 self.target = target
                 self.nonce = nonce
                 self.beneficiary = beneficiary 
-            print(self.index)
             block = {
                         "version" : self.version,
                         "height" : height,
