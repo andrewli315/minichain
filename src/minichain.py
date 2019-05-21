@@ -63,7 +63,7 @@ class minichain:
         height, block_hash = self.findMaxFork()
         balance = 0
         confirmation = 1
-        for i in range(0,height+1):
+        for i in range(0,height):
             file_name = self.DIR + '/' + block_hash + '.json'
             with open(file_name,'r') as data:
                 block = json.load(data)
@@ -99,7 +99,7 @@ class minichain:
             return json.dumps(ret)
 
     def insertBlock(self, height,prev_hash,tx_hash,beneficiary, target, nonce, txs, block_hash):
-        if txs != None:
+        if txs:
             valid_txs = []
             for tx in txs:
                 valid_txs.append(json.loads(tx))
@@ -115,6 +115,7 @@ class minichain:
                 self.target = target
                 self.nonce = nonce
                 self.beneficiary = beneficiary 
+            print(self.index)
             block = {
                         "version" : self.version,
                         "height" : height,

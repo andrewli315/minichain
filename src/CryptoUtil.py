@@ -20,8 +20,10 @@ class CryptoUtil:
         ret = False
         try:           
             load_key = VerifyingKey.from_string(binascii.unhexlify(public_key),curve=SECP256k1)
+            
             load_key.verify(binascii.unhexlify(sign), data.encode('utf-8'), hashfunc=hashlib.sha256)
             ret = True
+            print(ret)
         except:
             ret = False
         finally:

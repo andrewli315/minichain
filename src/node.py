@@ -44,7 +44,7 @@ class node:
                 }
         tx = Transaction(data)
         sig = self.wallet.sign(tx)
-        tx.setSignature(str(sig))
+        tx.setSignature(sig.decode('utf-8'))
         self.pauseMining(True)
         with self.mutex:
             ret_str = tx.toJsonStr()

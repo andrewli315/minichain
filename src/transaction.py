@@ -14,10 +14,10 @@ class Transaction:
     def storeTxPool(self):
         if not os.path.isdir('./TxPool'):
             os.mkdir('./TxPool')
-        with open('./TxPool/'+str(self.signature) +'.tx', 'w+') as tx:
+        with open('./TxPool/' + self.signature +'.tx', 'w+') as tx:
             tx.write(self.toJsonStr())
             tx.flush()
-    
+        tx.close()
     def getTo(self):
         return self.to
     def getValue(self):
