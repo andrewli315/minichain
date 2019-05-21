@@ -38,7 +38,7 @@ class minichain:
         return ret
     def findMaxFork(self):
         max_height = -1
-        fork_hash = ''
+        fork_hash = '0'*64        
         for block_hash in self.block_hash_pool:
             file_name = self.DIR + '/' + block_hash + '.json'
             with open(file_name, 'r') as data:

@@ -176,7 +176,6 @@ class node:
             with self.mutex:
                 rand_num = hex(random.randint(0,4294967295))[2:]
                 nonce = '0'*(8-len(rand_num)) + rand_num
-                self.index, self.prev_hash = self.minichain.findMaxFork()
 
                 if self.alreadyInValidTx == False:
                     valid_txs, valid = self.check_valid_txs(self.txpool)
@@ -291,19 +290,22 @@ class node:
             block_header += beneficiary
             block_hash = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
 
-            self.index = height
-            self.prev_hash = block_hash
             txs_dict = set()
             self.alreadyInValidTx = False
             for tx in txs:
                txs_dict.add(json.dumps(tx)) 
             if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs_dict,block_hash) == True:
                 with self.mutex:
+                    self.index = height
+                    self.prev_hash = block_hash
                     self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
-            else:
-                
+            else:                
+                with self.mutex:
+                    self.index = height
+                    self.prev_hash = block_hash
+                    self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
                 self.pauseMining(False)      
                 # hash invalid error
                 return self.RespondTemplate(1,None)
