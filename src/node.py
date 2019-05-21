@@ -109,8 +109,7 @@ class node:
             return False
         if tx_hash != self.calculate_tx_hash(txs):
             return False
-        if self.checkHashTarget(block_hash):
-            valid_hash =  True            
+        valid_hash = self.checkHashTarget(block_hash)
         valid_txs, valid = self.check_valid_txs(txs)
         return (valid_hash and valid )
 
@@ -144,10 +143,9 @@ class node:
     
     def calculate_tx_hash(self,txs):
         tx_signs = ''
-        if txs is None:
+        if not txs:
             ret = hashlib.sha256(''.encode('utf-8')).hexdigest()
         else:
-            print(txs)
             for tx_str in txs:
                 tx = json.loads(tx_str)
                 tx_signs += tx['signature']
@@ -275,21 +273,18 @@ class node:
             block_header += str(version).rjust(8,'0')
             block_header += prev_hash
             block_header += tx_hash
-            block_header += beneficiary
             block_header += target
             block_header += nonce
+            block_header += beneficiary
             block_hash = hashlib.sha256(block_header.encode('utf-8')).hexdigest()
             
             if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs,block_hash) == True:
-                if txs is not None:
-                    valid_tx, valid = self.check_valid_txs(txs)
-                    if valid == False:
-                        self.pauseMining(False)
-                        return self.RespondTemplate(1,None)                
-                self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs)
+                self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs, block_hash)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
             else:
+                print('block_is_valid')
+                print(self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs,block_hash))
                 print("[ERROR] INVALID Block")
                 self.pauseMining(False)      
                 # hash invalid error
@@ -493,15 +488,11 @@ class node:
             rpc_server_thread = threading.Thread(target=self.listen_rpc)
             rpc_server_thread.start()
 
-            print(self.delay)
             time.sleep(self.delay)
-            print('delay finish')
             # start miner
             if self.is_miner is True:
                 mining_thread = threading.Thread(target=self.mining)
                 mining_thread.start()          
-
-
         except KeyboardInterrupt:
             mining_thread._stop()
             p2p_server_thread._stop()
