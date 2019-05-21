@@ -28,6 +28,7 @@ class node:
         self.fee = fee
         self.tx_nonce = 0
         self.is_miner = is_miner
+        self.alreadyInValidTx = False
         # json object set
         self.txpool = set()
 
@@ -52,8 +53,7 @@ class node:
         self.pauseMining(False)
         ret = tx.toJson()
         tx.storeTxPool()
-        # TODO
-        # call sendTransaction api
+        self.alreadyInValidTx = False
         payload = {
                 "method" : "sendTransaction",
                 "data" : ret
@@ -137,10 +137,11 @@ class node:
             balance = self.minichain.getBalanceOf(tx['sender_pub_key'])
             fee = tx['fee'] + tx['value'] 
             if self.check_tx_sig(tx) and not self.minichain.tx_is_exist(tx['signature']) and balance >= fee:
+                print(tx_str)
                 valid_tx.add(tx_str)
             else:
                 valid = False
-        
+        print(valid_tx)
         return valid_tx,valid
     
     def calculate_tx_hash(self,txs):
@@ -148,8 +149,7 @@ class node:
         if not txs:
             ret = hashlib.sha256(''.encode('utf-8')).hexdigest()
         else:
-            for tx_str in txs:
-                tx = json.loads(tx_str)
+            for tx in txs:
                 tx_signs += tx['signature']
             ret = hashlib.sha256(tx_signs.encode('utf-8')).hexdigest()
         return ret
@@ -176,8 +176,12 @@ class node:
             with self.mutex:
                 rand_num = hex(random.randint(0,4294967295))[2:]
                 nonce = '0'*(8-len(rand_num)) + rand_num
-                valid_txs, valid = self.check_valid_txs(self.txpool)
-                tx_hash = self.calculate_tx_hash(valid_txs)
+                if self.alreadyInValidTx == False:
+                    valid_txs, valid = self.check_valid_txs(self.txpool)
+                    tx_hash = self.calculate_tx_hash(valid_txs)
+                    self.alreadyInValidTx = True                
+                    print(tx_hash)  
+
                 block_header = version + self.prev_hash + tx_hash + target + nonce + self.beneficiary
                 recent_hash = hashlib.sha256((block_header.encode('utf-8'))).hexdigest()
                 # using mutex to avoid race condition            
@@ -191,6 +195,7 @@ class node:
                     data = self.minichain.getBlockJson(recent_hash)
                     self.sendBlock(self.index, data)
                     self.prev_hash = recent_hash            
+                    self.alreadyInValidTx = False
     
     def checkHashTarget(self,recent_hash):
         diff = str(self.minichain.getTarget()).index('1')
@@ -257,8 +262,10 @@ class node:
             tx = Transaction(data)
             print(data)
             if self.wallet.checkTxSig(tx):
-                tx.storeTxPool()
-                self.txpool.add(tx.toJsonStr())
+                with self.mutex:
+                    tx.storeTxPool()
+                    self.txpool.add(tx.toJsonStr())
+                self.alreadyInValidTx = False
                 return self.RespondTemplate(0,None)
 
         elif method == "sendBlock":
