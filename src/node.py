@@ -259,6 +259,7 @@ class node:
             if self.wallet.checkTxSig(tx):
                 tx.storeTxPool()
                 self.txpool.add(tx.toJsonStr())
+                return self.RespondTemplate(0,None)
 
         elif method == "sendBlock":
             print("[GET]" + json.dumps(request))
