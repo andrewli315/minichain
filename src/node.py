@@ -44,7 +44,7 @@ class node:
                 }
         tx = Transaction(data)
         sig = self.wallet.sign(tx)
-        tx.setSignature(sig)
+        tx.setSignature(str(sig))
         self.pauseMining(True)
         with self.mutex:
             ret_str = tx.toJsonStr()
@@ -242,6 +242,7 @@ class node:
 
     def process_p2p_request(self, request): 
         method = request['method']
+        print(method)
         if method == "getBlocks":
             count = request['data']['hash_count']
             hash_begin = request['data']['hash_begin']
@@ -251,9 +252,10 @@ class node:
                 return self.RespondTemplate(1,None)
             else:                
                 return self.RespondTemplate(0,result)
-        elif method == "sendTransaction":
+        elif method == "sendTransaction":            
             data = request['data']
             tx = Transaction(data)
+            print(data)
             if self.wallet.checkTxSig(tx):
                 tx.storeTxPool()
                 self.txpool.add(tx.toJsonStr())
