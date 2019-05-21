@@ -298,12 +298,10 @@ class node:
                txs_dict.add(json.dumps(tx)) 
             if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs_dict,block_hash) == True:
                 with self.mutex:
-                    self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs, block_hash)
+                    self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
             else:
-                print('block_is_valid')
-                print(self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs_dict, block_hash))
                 print("[ERROR] INVALID Block")
                 self.pauseMining(False)      
                 # hash invalid error
