@@ -126,7 +126,7 @@ class node:
 #    judge if the txpool has valid tx
 #    if there is a valid tx then insert it into block
     def check_valid_txs(self, txs): 
-        valid_tx = set
+        valid_tx = set()
         valid = True
         if not txs :
             return None,True
