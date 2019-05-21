@@ -58,6 +58,7 @@ class node:
                 "method" : "sendTransaction",
                 "data" : ret
                 }
+        print(payload)
         for neighbor in self.neighbors:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
@@ -65,6 +66,7 @@ class node:
                 client.send(json.dumps(payload).encode('utf-8'))
                 result = client.recv(2048)
                 respond = json.loads(result.decode('utf-8'))
+                print(respond)
                 if respond['error'] == 1:
                     print("[ERROR] INTERNAL ERROR")
                 client.close()
