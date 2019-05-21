@@ -127,9 +127,9 @@ class node:
 #    judge if the txpool has valid tx
 #    if there is a valid tx then insert it into block
     def check_valid_txs(self, txs): 
-        valid_tx = set()
+        valid_tx = set
         valid = True
-        if txs is None:
+        if not txs :
             return None,True
         for tx_str in txs:
             tx = json.loads(tx_str)
@@ -147,6 +147,7 @@ class node:
         if txs is None:
             ret = hashlib.sha256(''.encode('utf-8')).hexdigest()
         else:
+            print(txs)
             for tx_str in txs:
                 tx = json.loads(tx_str)
                 tx_signs += tx['signature']
@@ -175,7 +176,7 @@ class node:
             with self.mutex:
                 rand_num = hex(random.randint(0,4294967295))[2:]
                 nonce = '0'*(8-len(rand_num)) + rand_num
-                valid_txs = self.check_valid_txs(self.txpool)
+                valid_txs, valid = self.check_valid_txs(self.txpool)
                 tx_hash = self.calculate_tx_hash(valid_txs)
                 block_header = version + self.prev_hash + tx_hash + target + nonce + self.beneficiary
                 recent_hash = hashlib.sha256((block_header.encode('utf-8'))).hexdigest()
