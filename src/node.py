@@ -141,7 +141,6 @@ class node:
                 valid_tx.add(tx_str)
             else:
                 valid = False
-        print(valid_tx)
         return valid_tx,valid
     
     def calculate_tx_hash(self,txs):
@@ -149,7 +148,10 @@ class node:
         if not txs:
             ret = hashlib.sha256(''.encode('utf-8')).hexdigest()
         else:
-            for tx in txs:
+            for tx_str in txs:
+                print(type(tx_str))
+                print(tx_str)
+                tx = json.loads(tx_str)
                 tx_signs += tx['signature']
             ret = hashlib.sha256(tx_signs.encode('utf-8')).hexdigest()
         return ret
@@ -180,7 +182,6 @@ class node:
                     valid_txs, valid = self.check_valid_txs(self.txpool)
                     tx_hash = self.calculate_tx_hash(valid_txs)
                     self.alreadyInValidTx = True                
-                    print(tx_hash)  
 
                 block_header = version + self.prev_hash + tx_hash + target + nonce + self.beneficiary
                 recent_hash = hashlib.sha256((block_header.encode('utf-8'))).hexdigest()
@@ -292,14 +293,17 @@ class node:
 
             self.index = height
             self.prev_hash = prev_hash
-            if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs,block_hash) == True:
+            txs_dict = set()
+            for tx in txs:
+               txs_dict.add(json.dumps(tx)) 
+            if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs_dict,block_hash) == True:
                 with self.mutex:
                     self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs, block_hash)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
             else:
                 print('block_is_valid')
-                print(self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs,block_hash))
+                print(self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs_dict, block_hash))
                 print("[ERROR] INVALID Block")
                 self.pauseMining(False)      
                 # hash invalid error
