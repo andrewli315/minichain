@@ -23,7 +23,7 @@ class CryptoUtil:
             
             load_key.verify(binascii.unhexlify(sign), data.encode('utf-8'), hashfunc=hashlib.sha256)
             ret = True
-        except:
+        except:         
             ret = False
         finally:
             return ret

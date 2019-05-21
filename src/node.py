@@ -110,6 +110,7 @@ class node:
         if target != self.minichain.getTarget():
             return False
         if tx_hash != self.calculate_tx_hash(txs):
+            print('tx_hash is invalid')
             return False
         valid_hash = self.checkHashTarget(block_hash)
         valid_txs, valid = self.check_valid_txs(txs)
@@ -123,7 +124,9 @@ class node:
     def check_tx_sig(self, tx):
         transaction = Transaction(tx)
         ret = self.wallet.checkTxSig(transaction)
-        return True 
+        if ret == False:
+            print('tx sig is invalid')
+        return ret
 #    this function only for node to 
 #    judge if the txpool has valid tx
 #    if there is a valid tx then insert it into block
@@ -141,6 +144,7 @@ class node:
                 valid_tx.add(tx_str)
             else:
                 valid = False
+                print('tx is exist or balance is not enough or tx sig is invalid')
         return valid_tx,valid
     
     def calculate_tx_hash(self,txs):
@@ -294,6 +298,7 @@ class node:
             self.index = height
             self.prev_hash = block_hash
             txs_dict = set()
+            self.alreadyInValidTx = False
             for tx in txs:
                txs_dict.add(json.dumps(tx)) 
             if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs_dict,block_hash) == True:

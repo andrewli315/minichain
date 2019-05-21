@@ -11,7 +11,7 @@ class wallet:
         self.address = public_key
     # use myself sign the transaction from rpc client
     def checkTxSig(self, tx):
-        ret = self.crypto_util.verify(tx.getPubKey(), tx.getSig().encode('utf-8'), tx.getSignData())
+        ret = self.crypto_util.verify(tx.getPubKey(), tx.getSig().encode('utf-8'), tx.getSignData())        
         return ret
 
     def sign(self, tx):
