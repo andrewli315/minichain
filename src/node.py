@@ -111,7 +111,7 @@ class node:
             return False
         if self.checkHashTarget(block_hash):
             valid_hash =  True            
-        valid_txs, valid = self.check_valid_txs(txs):
+        valid_txs, valid = self.check_valid_txs(txs)
         return (valid_hash and valid )
 
             
