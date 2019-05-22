@@ -154,6 +154,7 @@ class node:
         else:
             for tx_str in txs:
                 tx = json.loads(tx_str)
+                print(tx['signature'])
                 tx_signs += tx['signature']
             ret = hashlib.sha256(tx_signs.encode('utf-8')).hexdigest()
         return ret
