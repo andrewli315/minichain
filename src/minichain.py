@@ -91,8 +91,7 @@ class minichain:
                             sig_pool.add(sig)
                             balance[beneficiary] += tx['fee']
                             if pub_key in address_pool:
-                                balance[pub_key] -= tx['value'] + tx['fee']                            
-                                
+                                balance[pub_key] -= (tx['value'] + tx['fee'])
                             if tx['to'] in address_pool:
                                 balance[tx['to']] += tx['value']
                             else:
@@ -107,38 +106,12 @@ class minichain:
         return balance
     # for insert the latest block
     def getBalanceOf(self, address):
-        height, block_hash = self.findMaxFork()
-        balance = 0
-        confirmation = 1
-        sig_pool = set()
-        for i in range(0,height):
-            file_name = self.DIR + '/' + block_hash + '.json'
-            with open(file_name,'r') as data:
-                block = json.load(data)
-            if confirmation >= 3:
-                beneficiary = block['beneficiary']
-                if beneficiary == address:
-                    balance += 1000
-                txs = block['transactions']
-                if txs is not None:                    
-                    for tx in txs:
-                        transaction = Transaction(tx)
-                        pub_key = transaction.getPubKey()
-                        sig = transaction.getSig()
-                        signData = transaction.getSignData()
-                        ret = CryptoUtil.verify(CryptoUtil, pub_key, sig, signData)
-                        if ret and sig not in sig_pool:
-                            sig_pool.add(sig)
-                            balance += tx['fee']
-                            if tx['to'] == address:
-                                balance += tx['value']
-                            elif tx['sender_pub_key'] == address:
-                                balance -= tx['value']
-            confirmation += 1
-            block_hash = block['prev_block']
-            if block_hash == '0000000000000000000000000000000000000000000000000000000000000000':
-                break
-        return balance
+        balance = self.getAllBalance()
+        if address in balance:
+            return balance[address]
+        else:
+            return 0
+
     # for insert the latest block
     def getBlockJson(self,block_hash):
         file_name = self.DIR + '/' + block_hash + '.json'
