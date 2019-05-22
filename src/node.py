@@ -110,6 +110,8 @@ class node:
             print('TARGET ERROR')
             return False
         if tx_hash != self.calculate_tx_hash(txs):
+            print(tx_hash)
+            print(self.calculate_tx_hash(txs))
             print('TX HASH ERROR')
             return False
         valid_hash = self.checkHashTarget(block_hash)        
@@ -139,6 +141,7 @@ class node:
             balance = self.minichain.getBalanceOf(tx['sender_pub_key'])
             fee = tx['fee'] + tx['value'] 
             if self.check_tx_sig(tx) and not self.minichain.tx_is_exist(tx['signature']) and balance >= fee:
+                balance -= fee                
                 valid_tx.add(tx_str)
             else:
                 valid = False
