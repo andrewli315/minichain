@@ -32,46 +32,6 @@ class node:
         # json object set
         self.txpool = set()
 
-    # send tx to target address
-    def send2Addr(self, target, amount):
-        self.tx_nonce += 1
-        data = {
-                "nonce" : self.tx_nonce,
-                "sender_pub_key" : self.wallet.getPubKey(),
-                "to" : target,
-                "value" : amount,
-                "fee" : self.fee,
-                "signature" : ''
-                }
-        tx = Transaction(data)
-        sig = self.wallet.sign(tx)
-        tx.setSignature(sig.decode('utf-8'))
-        self.pauseMining(True)
-        with self.mutex:
-            ret_str = tx.toJsonStr()
-            self.txpool.add(ret_str)
-        self.pauseMining(False)
-        ret = tx.toJson()
-        tx.storeTxPool()
-        self.alreadyInValidTx = False
-        payload = {
-                "method" : "sendTransaction",
-                "data" : ret
-                }
-        for neighbor in self.neighbors:
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
-                client.send(json.dumps(payload).encode('utf-8'))
-                result = client.recv(2048)
-                respond = json.loads(result.decode('utf-8'))
-                print(respond)
-                if respond['error'] == 1:
-                    print("[ERROR] INTERNAL ERROR")
-                client.close()
-            except socket.error:
-                pass       
-        return self.RespondTemplate(0,None)
 
     def pauseMining(self,flag):
         self.getHeaderFlag = flag
@@ -101,6 +61,52 @@ class node:
                     "balance" : result
                 }
                 return json.dumps(respond)
+
+    def sendRespond(self, payload):
+        for neighbor in self.neighbors:
+            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
+                client.send(json.dumps(payload).encode('utf-8'))
+                result = client.recv(2048)
+                respond = json.loads(result.decode('utf-8'))
+                print(respond)
+                if respond['error'] == 1:
+                    print("[ERROR] INTERNAL ERROR")
+                client.close()
+            except socket.error:
+                pass               
+    # send tx to target address
+    def send2Addr(self, target, amount):
+        self.tx_nonce += 1
+        data = {
+                "nonce" : self.tx_nonce,
+                "sender_pub_key" : self.wallet.getPubKey(),
+                "to" : target,
+                "value" : amount,
+                "fee" : self.fee,
+                "signature" : ''
+                }
+        
+        tx = Transaction(data)
+        sig = self.wallet.sign(tx)
+        tx.setSignature(sig.decode('utf-8'))
+        self.pauseMining(True)
+        
+        with self.mutex:
+            ret_str = tx.toJsonStr()
+            self.txpool.add(ret_str)
+        self.pauseMining(False)
+        ret = tx.toJson()
+        tx.storeTxPool()
+        self.alreadyInValidTx = False
+        payload = {
+                "method" : "sendTransaction",
+                "data" : ret
+                }
+        self.sendRespond(payload)
+
+    
     def block_is_valid(self,version, prev_hash, tx_hash,beneficiary, target, nonce, txs, block_hash):
         valid_hash = False
         valid = False
@@ -140,17 +146,20 @@ class node:
             #balance = self.minichain.getBalanceOf(tx['sender_pub_key'])
             fee = tx['fee'] + tx['value']
             if tx['sender_pub_key'] in balance:
-                if self.check_tx_sig(tx) and not self.minichain.tx_is_exist(tx['signature']) and balance[tx['sender_pub_key']] >= fee:
+                if self.check_tx_sig(tx) and 
+                not self.minichain.tx_is_exist(tx['signature']) and 
+                balance[tx['sender_pub_key']] >= fee:
                     balance[tx['sender_pub_key']] -= fee
                     if tx['to'] in balance:
                         balance[tx['to']] += tx['value']
                     else:
                         balance[tx['to']] = 0
-                        balance[tx['to']] += tx['value']
-    
+                        balance[tx['to']] += tx['value']    
                     valid_tx.add(tx_str)
                 else:
                     valid =  False
+            else:
+                valid = False
         return valid_tx,valid
     
     def calculate_tx_hash(self,txs):
@@ -225,20 +234,7 @@ class node:
                 "data" : block
                 }
         print("[SEND] " + json.dumps(payload))
-
-        for neighbor in self.neighbors:
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                client.connect((neighbor.getAddr(), neighbor.getp2pPort()))
-                client.send(json.dumps(payload).encode('utf-8'))
-                result = client.recv(2048)
-                respond = json.loads(result.decode('utf-8'))
-                print(respond)
-                if respond['error'] == 1:
-                    print("[ERROR] INTERNAL ERROR")
-                client.close()
-            except socket.error:
-                pass       
+        self.sendRespond(payload)        
          
     def getBlocks(self, count, hash_begin, hash_stop,client):
         payload = {
@@ -309,51 +305,15 @@ class node:
                txs_dict.add(json.dumps(tx)) 
             if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs_dict,block_hash) == True:
                 with self.mutex:
-                    self.index = height
-                    self.prev_hash = block_hash
+                    if self.index < height:
+                        self.index = height
+                        self.prev_hash = block_hash
                     self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
         self.pauseMining(False)
         # unknown method error      
         return self.RespondTemplate(1,None)
-
-    def getMaxFork(self, max_chain):
-        idx = 0                
-        for item in max_chain['result']:
-            m = hashlib.sha256()
-            m.update(item.encode('utf-8'))
-            h = m.hexdigest()
-            recent_hash = h
-            with self.mutex:
-                self.minichain.insertBlock(item, recent_hash, idx )
-            idx = idx + 1
-        self.index = idx - 1
-        self.prev_hash = recent_hash
-    # make sure the fork is the longest 
-    def check_fork(self, prev_hash, recent_hash,block_height):
-        print("[SYNC FORK]")
-        max_length = -1
-        # request for each nodes to get the max chain        
-        for neighbor in self.neighbors:
-            try:
-                client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                client.connect((neighbor.getAddr(),neighbor.getp2pPort()))
-            except:                
-                continue
-            ret = self.getBlocks(block_height + 1, prev_hash, recent_hash, client)
-            respond = json.loads(ret)
-            if respond['result'] is not None:
-                chain_length = len(respond['result'])
-            else:
-                chain_length = -1
-            if max_length < chain_length:
-                max_length = chain_length
-                max_chain = respond 
-        # update the max fork        
-        self.getMaxFork(max_chain)
-        client.close()
-        return True
 
         # handle the p2p client request.
     def handle_p2p_client(self,client_socket,addr):
@@ -453,58 +413,8 @@ class node:
             s.close()
 
 
-#this version would not use this function
-
-    def resume(self):
-        if os.path.isdir(self.DIR):
-            print("[CHECKING]")
-            idx = 0
-            file_is_null = False
-            while True:
-                file_name = self.DIR + '/' + str(idx) + '.json'
-                """
-                    if last time write file is failed
-                    then suppose the corresponded block is failed
-                    get the previous block as latest block.
-                """ 
-                if file_is_null:
-                    with open(file_name, 'r') as f:
-                        
-                        block = json.load(f)
-                        self.minichain.updateBlock(block,idx)
-                    self.index = idx
-                    break
-                """
-                    check the directory "./blocks" if there are any block files.
-                    if there are some files, update the minichain.
-                """
-                if not os.path.isfile(file_name) and idx > 0 :
-                    with open(self.DIR + '/' + str(idx-1) + '.json', 'r') as f:
-                        try:
-                            print("[UPDATE]")
-                            block = json.load(f)
-                        except:
-                            print("this file is empty")
-                            idx = idx - 2
-                            file_is_null = True
-                            continue
-                        print(json.dumps(block))
-                        self.minichain.updateBlock(block,idx-1)
-                    self.index = idx - 1
-                    break                
-                #if the genesis file does not exist, skip the checking.                
-                if not os.path.isfile(file_name) and idx == 0 :
-                    break
-                idx = idx + 1
-        # check previous tx record
-
-
-
     def start_node(self):
-        print("[RUNNING]")
-        #self.resume()
-        # start mining thread
-        
+        print("[RUNNING]")       
         try:
             # start p2p server
             p2p_server_thread = threading.Thread(target=self.listen_p2p)

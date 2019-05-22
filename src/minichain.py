@@ -55,8 +55,6 @@ class minichain:
                     fork_hash = block_hash        
         self.current_hash = fork_hash
         self.index = max_height
-
-
         return max_height,fork_hash
     """
         when confirmation >= 3, the block could be 
@@ -82,7 +80,7 @@ class minichain:
                     balance[beneficiary] = 0
                     address_pool.add(beneficiary)
                 txs = block['transactions']
-                if txs is not None:                    
+                if txs is not None:
                     for tx in txs:
                         transaction = Transaction(tx)
                         pub_key = transaction.getPubKey()
@@ -167,75 +165,6 @@ class minichain:
         except:
             traceback.print_exc()
             print("Except")
-
-    def updateBlock(self,block,idx):
-        self.version = block['version']
-        self.prev_hash = block['prev_block']
-        self.target = block['target'] 
-        self.tx_hash = block['transactions_hash']
-        self.current_hash = block['block_hash']
-        self.nonce = block['nonce']        
-        self.index = idx
-    
-    def getBlockHashByIndex(self,index):
-        file_name = self.DIR + '/' + str(index) + '.json'
-        if os.path.isfile(file_name):
-            with open(file_name, 'r') as f:
-                block = json.load(f)
-                block_hash = block['block_hash']
-                return block_hash
-        else :
-            return None
-    def getBlockByIndex(self,index):
-        file_name = self.DIR + '/' + str(index) + '.json'
-        if os.path.isfile(file_name):
-            with open(file_name, 'r') as f:
-                block = json.load(f)           
-                return json.dumps(block)
-        return None
-
-
-    def getBlockHeader(self,block_hash):
-        idx = 0
-        while True:
-            search_hash = self.getBlockHashByIndex(idx)
-            if block_hash == search_hash:
-                block = json.loads(self.getBlockByIndex(idx))
-                block_header = block['block_header']
-                return json.dumps(block_header)
-            elif search_hash is None:
-                break
-            idx = idx + 1
-        return None
-    def getBlocks(self, count, hash_begin, hash_stop):        
-        idx = self.getBlockIndex(hash_begin)
-        begin = idx
-        stop = idx + count + 1
-        result = []
-        for i in range(begin, stop):
-            data = self.getBlockByIndex(i)
-            if data is None:
-                break
-            block = json.loads(data)
-            block_header = block['block_header']['version'] 
-            block_header += block['block_header']['prev_block']
-            block_header += block['block_header']['merkle_root'] 
-            block_header += block['block_header']['target'] 
-            block_header += block['block_header']['nonce']
-            result.append(block_header)
-        return result
-
-    def getBlockIndex(self, block_hash):
-        if block_hash == '0'*64:
-            return 0
-        idx = 0
-        while True:
-            search_hash = self.getBlockHashByIndex(idx)
-            if block_hash == search_hash:
-                return idx
-            elif search_hash == None:
-                break
-        return -1
 
     def getIndex(self):
         return self.index
