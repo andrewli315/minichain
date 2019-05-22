@@ -110,8 +110,6 @@ class node:
             print('TARGET ERROR')
             return False
         if tx_hash != self.calculate_tx_hash(txs):
-            print(tx_hash)
-            print(self.calculate_tx_hash(txs))
             print('TX HASH ERROR')
             return False
         valid_hash = self.checkHashTarget(block_hash)        
@@ -137,6 +135,7 @@ class node:
         if txs is None:         
             return None,True
         balance = self.minichain.getAllBalance()
+        print(balance)
         for tx_str in txs:
             tx = json.loads(tx_str)
             #balance = self.minichain.getBalanceOf(tx['sender_pub_key'])
@@ -152,9 +151,7 @@ class node:
     
                     valid_tx.add(tx_str)
                 else:
-                    return None, False
-            else:
-                return None, False
+                    valid =  False
         return valid_tx,valid
     
     def calculate_tx_hash(self,txs):
