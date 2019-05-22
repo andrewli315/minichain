@@ -146,9 +146,7 @@ class node:
             #balance = self.minichain.getBalanceOf(tx['sender_pub_key'])
             fee = tx['fee'] + tx['value']
             if tx['sender_pub_key'] in balance:
-                if self.check_tx_sig(tx) and 
-                not self.minichain.tx_is_exist(tx['signature']) and 
-                balance[tx['sender_pub_key']] >= fee:
+                if self.check_tx_sig(tx) and not self.minichain.tx_is_exist(tx['signature']) and balance[tx['sender_pub_key']] >= fee:
                     balance[tx['sender_pub_key']] -= fee
                     if tx['to'] in balance:
                         balance[tx['to']] += tx['value']
