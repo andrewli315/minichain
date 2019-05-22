@@ -105,12 +105,14 @@ class node:
         valid_hash = False
         valid = False
         if version != 2:
-           return False
+           return False       
         if target != self.minichain.getTarget():
+            print('TARGET ERROR')
             return False
         if tx_hash != self.calculate_tx_hash(txs):
+            print('TX HASH ERROR')
             return False
-        valid_hash = self.checkHashTarget(block_hash)
+        valid_hash = self.checkHashTarget(block_hash)        
         return valid_hash
 
             
