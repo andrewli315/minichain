@@ -18,18 +18,6 @@ class Transaction:
             tx.write(self.toJsonStr())
             tx.flush()
         tx.close()
-    def getTo(self):
-        return self.to
-    def getValue(self):
-        return self.value
-    def getNonce(self):
-        return self.nonce
-    def getFee(self):
-        return self.fee    
-    def getPubKey(self):
-        return self.sender_pub_key
-    def getSig(self):
-        return self.signature
     
     # for verifying and signing the tx
     def getSignData(self):
@@ -39,8 +27,7 @@ class Transaction:
         data = nonce + self.sender_pub_key + self.to + value + fee
         ret = hashlib.sha256(data.encode('utf-8')).hexdigest()
         return ret
-    def setSignature(self, sig):
-        self.signature = str(sig)
+
     def toJsonStr(self):
         ret = {
                "fee" : self.fee ,
@@ -61,5 +48,17 @@ class Transaction:
                "value" : self.value
                }
         return ret
-
-        
+    def setSignature(self, sig):
+        self.signature = str(sig)
+    def getTo(self):
+        return self.to
+    def getValue(self):
+        return self.value
+    def getNonce(self):
+        return self.nonce
+    def getFee(self):
+        return self.fee    
+    def getPubKey(self):
+        return self.sender_pub_key
+    def getSig(self):
+        return self.signature
