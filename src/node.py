@@ -141,7 +141,7 @@ class node:
             balance = self.minichain.getBalanceOf(tx['sender_pub_key'])
             fee = tx['fee'] + tx['value'] 
             if self.check_tx_sig(tx) and not self.minichain.tx_is_exist(tx['signature']) and balance >= fee:
-                balance -= fee                
+                balance -= fee  
                 valid_tx.add(tx_str)
             else:
                 valid = False
@@ -149,13 +149,15 @@ class node:
     
     def calculate_tx_hash(self,txs):
         tx_signs = ''
+        sigs = {}
         if not txs:
             ret = hashlib.sha256(''.encode('utf-8')).hexdigest()
         else:
             for tx_str in txs:
                 tx = json.loads(tx_str)
-                print(tx['signature'])
-                tx_signs += tx['signature']
+                sigs[tx['nonce']] = tx['signature'] 
+            for i in sorted(sigs)
+                tx_signs += sigs[i]
             ret = hashlib.sha256(tx_signs.encode('utf-8')).hexdigest()
         return ret
     """
