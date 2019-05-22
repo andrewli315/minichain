@@ -3,6 +3,7 @@ import json
 import traceback
 from CryptoUtil import CryptoUtil
 from transaction import Transaction
+import threading
 class minichain:
     """
         block header format is ""
@@ -10,6 +11,7 @@ class minichain:
     """
     def __init__(self, target):
         self.DIR = './blocks'
+        self.mutex = threading.Lock()
         if not os.path.isdir(self.DIR):
             os.makedirs(self.DIR,mode=0o777)
         self.target = target
@@ -42,15 +44,15 @@ class minichain:
         return ret
     def findMaxFork(self):
         max_height = -1
-        fork_hash = '0'*64        
-        for block_hash in self.block_hash_pool:
-            file_name = self.DIR + '/' + block_hash + '.json'
-            with open(file_name, 'r') as data:
-                block = json.load(data)
-            if max_height < block['height']:
-                max_height = block['height']
-                fork_hash = block_hash
-        
+        fork_hash = '0'*64
+        with self.mutex:
+            for block_hash in self.block_hash_pool:
+                file_name = self.DIR + '/' + block_hash + '.json'
+                with open(file_name, 'r') as data:
+                    block = json.load(data)
+                if max_height < block['height']:
+                    max_height = block['height']
+                    fork_hash = block_hash        
         self.current_hash = fork_hash
         self.index = max_height
 
@@ -155,12 +157,13 @@ class minichain:
                         "nonce" : nonce,
                         "transactions" : valid_txs
                     }
-            self.block_hash_pool.add(block_hash)
-            file_name = self.DIR + '/' + str(block_hash) + '.json'
-            with open(file_name , 'w+') as f:
-                f.write(json.dumps(block))
-                f.flush()
-            f.close()
+            with self.mutex:
+                self.block_hash_pool.add(block_hash)
+                file_name = self.DIR + '/' + str(block_hash) + '.json'
+                with open(file_name , 'w+') as f:
+                    f.write(json.dumps(block))
+                    f.flush()
+                f.close()
         except:
             traceback.print_exc()
             print("Except")
