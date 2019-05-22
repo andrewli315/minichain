@@ -1,6 +1,8 @@
 import os
 import json
 import traceback
+from CryptoUtil import CryptoUtil
+from transaction import Transaction
 class minichain:
     """
         block header format is ""
@@ -63,6 +65,7 @@ class minichain:
         height, block_hash = self.findMaxFork()
         balance = 0
         confirmation = 1
+        sig_pool = set()
         for i in range(0,height):
             file_name = self.DIR + '/' + block_hash + '.json'
             with open(file_name,'r') as data:
@@ -74,11 +77,18 @@ class minichain:
                 txs = block['transactions']
                 if txs is not None:                    
                     for tx in txs:
-                        balance += tx['fee']
-                        if tx['to'] == address:
-                            balance += tx['value']
-                        elif tx['sender_pub_key'] == address:
-                            balance -= tx['value']
+                        transaction = Transaction(tx)
+                        pub_key = transaction.getPubKey()
+                        sig = transaction.getSig()
+                        signData = transaction.getSignData()
+                        ret = CryptoUtil.verify(CryptoUtil, pub_key, sig, signData)
+                        if ret and sig not in sig_pool:
+                            sig_pool.add(sig)
+                            balance += tx['fee']
+                            if tx['to'] == address:
+                                balance += tx['value']
+                            elif tx['sender_pub_key'] == address:
+                                balance -= tx['value']
             confirmation += 1
             block_hash = block['prev_block']
             if block_hash == '0'*64:

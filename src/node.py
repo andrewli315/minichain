@@ -111,8 +111,7 @@ class node:
         if tx_hash != self.calculate_tx_hash(txs):
             return False
         valid_hash = self.checkHashTarget(block_hash)
-        valid_txs, valid = self.check_valid_txs(txs)
-        return (valid_hash and valid )
+        return valid_hash
 
             
 #check transaction if it appears in previous block,
@@ -247,7 +246,6 @@ class node:
 
     def process_p2p_request(self, request): 
         method = request['method']
-        print(method)
         if method == "getBlocks":
             count = request['data']['hash_count']
             hash_begin = request['data']['hash_begin']
@@ -260,13 +258,14 @@ class node:
         elif method == "sendTransaction":            
             data = request['data']
             tx = Transaction(data)
-            print(data)
             if self.wallet.checkTxSig(tx):
                 with self.mutex:
                     tx.storeTxPool()
                     self.txpool.add(tx.toJsonStr())
                 self.alreadyInValidTx = False
                 return self.RespondTemplate(0,None)
+            else:
+                return self.RespondTemplate(1,None)
 
         elif method == "sendBlock":
             print("[GET]" + json.dumps(request))
@@ -301,15 +300,7 @@ class node:
                     self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
-            else:                
-                with self.mutex:
-                    self.index = height
-                    self.prev_hash = block_hash
-                    self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
-                self.pauseMining(False)      
-                # hash invalid error
-                return self.RespondTemplate(1,None)
-            self.pauseMining(False)      
+        self.pauseMining(False)
         # unknown method error      
         return self.RespondTemplate(1,None)
 
