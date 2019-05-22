@@ -27,16 +27,18 @@ class minichain:
     def tx_is_exist(self, tx_sig):
         height, block_hash = self.findMaxFork()
         ret = False
-        for i in range(0, height + 1):
+        for i in range(0, height ):
             file_name = self.DIR + '/' + block_hash + '.json'
             with open(file_name,'r') as data:
                 block = json.load(data)
             if block['transactions'] is not None:
-                for tx in block['transactions']:                   
+                for tx in block['transactions']:  
                     if tx['signature'] == tx_sig:
                         ret = True
                         return ret
             block_hash = block['prev_block']
+            if block_hash == '0000000000000000000000000000000000000000000000000000000000000000':
+                break
         return ret
     def findMaxFork(self):
         max_height = -1
@@ -60,7 +62,50 @@ class minichain:
         Therefore we count the balance only if the 
         confirmation of transaction is >= 3
     """
-
+    def getAllBalance(self):
+        height, block_hash = self.findMaxFork()
+        balance = {}        
+        confirmation = 1
+        sig_pool = set()
+        address_pool = set()
+        for i in range(0,height):
+            file_name = self.DIR + '/' + block_hash + '.json'
+            with open(file_name,'r') as data:
+                block = json.load(data)
+            if confirmation >= 3:
+                beneficiary = block['beneficiary']
+                if beneficiary in address_pool:
+                    balance[beneficiary] += 1000
+                else:
+                    balance[beneficiary] = 0
+                    address_pool.add(beneficiary)
+                txs = block['transactions']
+                if txs is not None:                    
+                    for tx in txs:
+                        transaction = Transaction(tx)
+                        pub_key = transaction.getPubKey()
+                        sig = transaction.getSig()
+                        signData = transaction.getSignData()
+                        ret = CryptoUtil.verify(CryptoUtil, pub_key, sig, signData)
+                        if ret and not sig in sig_pool:
+                            sig_pool.add(sig)
+                            balance[beneficiary] += tx['fee']
+                            if pub_key in address_pool:
+                                balance[pub_key] -= tx['value'] + tx['fee']                            
+                                
+                            if tx['to'] in address_pool:
+                                balance[tx['to']] += tx['value']
+                            else:
+                                balance[tx['to']] = 0
+                                address_pool.add(tx['to'])
+                                balance[tx['to']] += tx['value']
+                            
+            confirmation += 1
+            block_hash = block['prev_block']
+            if block_hash == '0000000000000000000000000000000000000000000000000000000000000000':
+                break
+        return balance
+    # for insert the latest block
     def getBalanceOf(self, address):
         height, block_hash = self.findMaxFork()
         balance = 0
@@ -91,7 +136,7 @@ class minichain:
                                 balance -= tx['value']
             confirmation += 1
             block_hash = block['prev_block']
-            if block_hash == '0'*64:
+            if block_hash == '0000000000000000000000000000000000000000000000000000000000000000':
                 break
         return balance
     # for insert the latest block
