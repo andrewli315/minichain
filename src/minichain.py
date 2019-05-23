@@ -72,7 +72,7 @@ class minichain:
             file_name = self.DIR + '/' + block_hash + '.json'
             with open(file_name,'r') as data:
                 block = json.load(data)
-            if confirmation >= 3:
+            if confirmation >= 22:
                 beneficiary = block['beneficiary']
                 if beneficiary in address_pool:
                     balance[beneficiary] += 1000
