@@ -370,7 +370,7 @@ class node:
 
         elif method == "getbalance":
             target_address = request['data']['address']
-            balance = self.minichain.getBalanceOf(target_address)
+            balance = self.minichain.getBalanceOf(target_address)            
             return self.RespondTemplate(0,balance, fmt='balance')
         elif method == "sendtoaddress":
             target_addr = request['data']['address']
