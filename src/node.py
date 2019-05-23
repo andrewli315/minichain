@@ -105,7 +105,7 @@ class node:
                 "data" : ret
                 }
         self.sendRespond(payload)
-
+        return self.RespondTemplate(0,None)
     
     def block_is_valid(self,version, prev_hash, tx_hash,beneficiary, target, nonce, txs, block_hash):
         valid_hash = False
