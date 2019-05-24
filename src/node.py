@@ -160,7 +160,8 @@ class node:
             else:
                 valid = False
         return valid_tx,valid
-    
+    def sigInBlock(self, tx):
+        return self.minichain.tx_is_exist(tx['signature'])
     def calculate_tx_hash(self,txs):
         tx_signs = ''
         sigs = {}
@@ -267,7 +268,7 @@ class node:
         elif method == "sendTransaction":            
             data = request['data']
             tx = Transaction(data)
-            if self.wallet.checkTxSig(tx):
+            if self.wallet.checkTxSig(tx) and self.sigInBlock(tx):
                 with self.mutex:
                     tx.storeTxPool()
                     self.txpool.add(tx.toJsonStr())
