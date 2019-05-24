@@ -119,7 +119,8 @@ class node:
             print('TX HASH ERROR')
             return False
         valid_hash = self.checkHashTarget(block_hash)        
-        return valid_hash
+        valid_tx, valid = self.check_valid_txs(txs)
+        return (valid_hash and valid)
 
             
 #check transaction if it appears in previous block,
