@@ -311,6 +311,9 @@ class node:
                     self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
+            else:
+                self.pauseMining(False)
+                return self.RespondTemplate(1,None)
         self.pauseMining(False)
         # unknown method error      
         return self.RespondTemplate(1,None)
