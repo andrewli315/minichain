@@ -161,7 +161,7 @@ class node:
                 valid = False
         return valid_tx,valid
     def sigInBlock(self, tx):
-        return self.minichain.tx_is_exist(tx['signature'])
+        return self.minichain.tx_is_exist(tx.getSig())
     def calculate_tx_hash(self,txs):
         tx_signs = ''
         sigs = {}
@@ -375,6 +375,7 @@ class node:
             balance = self.minichain.getBalanceOf(target_address)            
             return self.RespondTemplate(0,balance, fmt='balance')
         elif method == "sendtoaddress":
+            print(request)
             target_addr = request['data']['address']
             amount = request['data']['amount']
             ret = self.send2Addr(target_addr, amount)
