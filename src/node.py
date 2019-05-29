@@ -119,8 +119,7 @@ class node:
             print('TX HASH ERROR')
             return False
         valid_hash = self.checkHashTarget(block_hash)        
-        valid_tx, valid = self.check_valid_txs(txs)
-        return (valid_hash and valid)
+        return valid_hash
 
             
 #check transaction if it appears in previous block,
@@ -155,7 +154,7 @@ class node:
                         balance[tx['to']] = 0
                         balance[tx['to']] += tx['value']    
                     valid_tx.add(tx_str)
-                else:
+                elif self.check_tx_sig(tx) or self.minichain.tx_is_exist(tx['signature']):
                     valid =  False
             else:
                 valid = False
@@ -302,8 +301,9 @@ class node:
             txs_dict = set()
             self.alreadyInValidTx = False
             for tx in txs:
-               txs_dict.add(json.dumps(tx)) 
-            if self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs_dict,block_hash) == True:
+               txs_dict.add(json.dumps(tx))
+            valid_txs, valid = self.check_valid_txs(txs_dict)
+            if valid and self.block_is_valid(version, prev_hash, tx_hash, beneficiary, target, nonce, txs_dict,block_hash) == True:
                 with self.mutex:
                     if self.index < height:
                         self.index = height
@@ -311,7 +311,7 @@ class node:
                     self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
-            else:
+            elif valid == False:
                 self.pauseMining(False)
                 return self.RespondTemplate(1,None)
         self.pauseMining(False)
