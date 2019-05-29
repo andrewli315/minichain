@@ -104,6 +104,7 @@ class node:
                 "method" : "sendTransaction",
                 "data" : ret
                 }
+        print(payload)
         self.sendRespond(payload)
         return self.RespondTemplate(0,None)
     
@@ -266,6 +267,7 @@ class node:
                 return self.RespondTemplate(0,result)
         elif method == "sendTransaction":            
             data = request['data']
+            print(data)
             tx = Transaction(data)
             if self.wallet.checkTxSig(tx) and self.sigInBlock(tx):
                 with self.mutex:
