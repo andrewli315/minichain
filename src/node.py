@@ -269,7 +269,9 @@ class node:
             data = request['data']
             print(data)
             tx = Transaction(data)
-            if self.wallet.checkTxSig(tx) and self.sigInBlock(tx):
+            print(self.wallet.checkTxSig(tx))
+            print(self.sigInBlock(tx))
+            if self.wallet.checkTxSig(tx) and not self.sigInBlock(tx):
                 with self.mutex:
                     tx.storeTxPool()
                     self.txpool.add(tx.toJsonStr())
