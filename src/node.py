@@ -310,7 +310,7 @@ class node:
                         self.index = height
                         self.prev_hash = block_hash
                     self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
-                    print(selfe.minichain.getIndex())
+                    print(self.minichain.getIndex())
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
             elif valid == False:
