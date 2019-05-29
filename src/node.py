@@ -267,10 +267,7 @@ class node:
                 return self.RespondTemplate(0,result)
         elif method == "sendTransaction":            
             data = request['data']
-            print(data)
             tx = Transaction(data)
-            print(self.wallet.checkTxSig(tx))
-            print(self.sigInBlock(tx))
             if self.wallet.checkTxSig(tx) and not self.sigInBlock(tx):
                 with self.mutex:
                     tx.storeTxPool()
@@ -313,6 +310,7 @@ class node:
                         self.index = height
                         self.prev_hash = block_hash
                     self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
+                    print(selfe.minichain.getIndex())
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
             elif valid == False:
