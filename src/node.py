@@ -104,7 +104,6 @@ class node:
                 "method" : "sendTransaction",
                 "data" : ret
                 }
-        print(payload)
         self.sendRespond(payload)
         return self.RespondTemplate(0,None)
     
@@ -310,7 +309,6 @@ class node:
                         self.index = height
                         self.prev_hash = block_hash
                     self.minichain.insertBlock(height, prev_hash, tx_hash,beneficiary, target, nonce, txs_dict, block_hash)
-                    print(self.minichain.getIndex())
                 self.pauseMining(False)
                 return self.RespondTemplate(0,None)
             elif valid == False:
@@ -380,7 +378,6 @@ class node:
             balance = self.minichain.getBalanceOf(target_address)            
             return self.RespondTemplate(0,balance, fmt='balance')
         elif method == "sendtoaddress":
-            print(request)
             target_addr = request['data']['address']
             amount = request['data']['amount']
             ret = self.send2Addr(target_addr, amount)
